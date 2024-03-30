@@ -1,0 +1,8 @@
+pandas==1.5.3
+sklearn-pandas==2.2.0
+tensorflow==2.15.0
+numpy==1.25.2
+keras==2.15.0
+tf-keras==2.15.0
+everywhereml==0.2.37
+
