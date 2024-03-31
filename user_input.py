@@ -13,6 +13,7 @@ mqtt_server = ""
 mqtt_port = ""
 receive_topic = ""
 send_topic = ""
+device_port = ""
 
 
 
@@ -68,6 +69,10 @@ def set_send_topic(new_value):
     global send_topic
     send_topic = new_value
 
+# Función para actualizar device_port
+def set_device_port(new_value):
+    global device_port
+    device_port = new_value
 
 # Función para obtener file_name
 def get_file_name():
@@ -108,3 +113,7 @@ def get_receive_topic():
 # Función para obtener send_topic
 def get_send_topic():
     return send_topic
+
+# Función para obtener send_topic
+def get_device_port():
+    return device_port

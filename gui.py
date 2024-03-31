@@ -28,7 +28,7 @@ from template import prueba
 
 from config import *
 from user_input import *
-from utils import save_values_page1,save_values_page2, save_values_page3, create_numeric_entry, raise_frame, create_sketch
+from utils import save_values_page1,save_values_page2, save_values_page3, create_numeric_entry, raise_frame, create_sketch, get_port_list
 from model import train_async
 
 
@@ -124,11 +124,16 @@ def create_page2():
     submit_config_btn.grid(row=7, column=1, padx=50, pady=20, sticky="ew")
 
 
+
+
+
+
+
 # Function to create Page 3 elements
 def create_page3():
-
+    
     # Grid layout configuration for page 2, 10 rows and 2 columns
-    for i in range(10):  
+    for i in range(11):  
         page3.grid_rowconfigure(i, weight=1)
 
     for i in range(2):  
@@ -150,7 +155,7 @@ def create_page3():
     password_label = Label(page3, text="Password:")
     password_label.grid(row=2, column=0, padx=10, pady=10, sticky="e")  
 
-    password_entry = Entry(page3, width=30)
+    password_entry = Entry(page3, width=30, show="•")
     password_entry.grid(row=2, column=1, padx=10, pady=10, sticky="w") 
 
     ip_esp32_label = Label(page3, text="ESP32 IP:")
@@ -189,16 +194,28 @@ def create_page3():
     send_topic_entry.grid(row=8, column=1, padx=10, pady=10, sticky="w")  
 
 
+    # Dropdown menu
+    dropdown_label = Label(page3, text="Device Port:")
+    dropdown_label.grid(row=9, column=0, padx=10, pady=10, sticky="e")  
+
+
+    port_list = get_port_list()
+    port_clicked = StringVar()
+    port_clicked.set(port_list[0])
+
+    dropdown_menu = OptionMenu(page3, port_clicked, *port_list)
+    dropdown_menu.grid(row=9, column=1, padx=10, pady=10, sticky="w")  
+
 
     # Creating page 3 buttons    
     edit_config_btn = Button(page3, text="Edit Configuration", command=lambda: raise_frame([page1,page2,page3,page4],page2))
-    edit_config_btn.grid(row=9, column=0, padx=50, pady=10, sticky="ew")  
+    edit_config_btn.grid(row=10, column=0, padx=50, pady=10, sticky="ew")  
 
     compile_btn = Button(page3, text="Compile and Deploy", command=lambda: save_values_page3([page1,page2,page3,page4], page4,file_name_entry, ssid_entry, password_entry,
                                                                     ip_esp32_entry, mqtt_client_name_entry, mqtt_server_entry, mqtt_port_entry,
-                                                                    receive_topic_entry, send_topic_entry))
+                                                                    receive_topic_entry, send_topic_entry, port_clicked))
 
-    compile_btn.grid(row=9, column=1, padx=50, pady=10, sticky="ew")  
+    compile_btn.grid(row=10, column=1, padx=50, pady=10, sticky="ew")  
 
 
 

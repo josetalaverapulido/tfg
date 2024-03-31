@@ -3,8 +3,8 @@ import tkinter as tk
 from tkinter import Entry, messagebox
 import subprocess
 
-from user_input import set_file_name,set_file_directory,set_ssid,set_password,set_ip_esp32,set_mqtt_client_name,set_mqtt_server,set_mqtt_port,set_receive_topic,set_send_topic
-from user_input import get_file_name,get_file_directory,get_ssid,get_password,get_ip_esp32,get_mqtt_client_name,get_mqtt_server,get_mqtt_port,get_receive_topic,get_send_topic
+from user_input import set_file_name,set_file_directory,set_ssid,set_password,set_ip_esp32,set_mqtt_client_name,set_mqtt_server,set_mqtt_port,set_receive_topic,set_send_topic, set_device_port
+from user_input import get_file_name,get_file_directory,get_ssid,get_password,get_ip_esp32,get_mqtt_client_name,get_mqtt_server,get_mqtt_port,get_receive_topic,get_send_topic, get_device_port
 from template import prueba
 from config import MODELS_DIRECTORY, FQBN_ESP32
 import re
@@ -31,6 +31,30 @@ def create_numeric_entry(parent, data_type, data_length=None):
     return entry
 
 
+def get_port_list():
+    # Run the command in the cmd
+    result = subprocess.run('arduino-cli board list', capture_output=True, text=True, shell=True)
+
+    # Check if the execution was successful
+    if result.returncode == 0:
+        # Get the output of the command
+        output = result.stdout
+        
+        # Print the output to verify
+        print(output)
+        
+        # Separate the output lines
+        lines = output.strip().split('\n')
+        
+        # Create a list with the desired format: COMx-Protocol
+        port_list = [line.split()[0] + '-' + line.split()[1] for line in lines[1:]]
+        
+        # Print the port list
+        print("port_list: ", port_list)
+    else:
+        print("Error executing the command.")
+
+    return port_list
 
 # raise_frame([frame1, frame3], frame2))
 
@@ -94,9 +118,17 @@ def create_sketch(console_text):
     except Exception as e:
         console_text.insert('end', str(e) + "\n")
 
+
     #----------------- Carga Sketch --------------
-    ip_esp32 = get_ip_esp32()
-    upload_command = f"arduino-cli upload -p {ip_esp32} --fqbn {FQBN_ESP32} --upload-field password={password} {file_name}.ino"
+    device_port = get_device_port()
+    port, protocol = device_port.split("-")
+
+    if "NETWORK" in protocol.upper():
+        ip_esp32 = get_ip_esp32()
+        upload_command = f"arduino-cli upload -p {ip_esp32} --fqbn {FQBN_ESP32} --upload-field password={password} {file_name}.ino"
+
+    elif "SERIAL"in protocol.upper():
+        upload_command = f"arduino-cli upload -p {port} --fqbn {FQBN_ESP32} {file_name}.ino"
     
     try:
         process = subprocess.Popen(upload_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=file_directory)
@@ -165,7 +197,7 @@ def save_values_page2(frame_list, target_frame, batch_size_entry, epochs_entry, 
 
 def save_values_page3(frame_list,target_frame,file_name_entry, ssid_entry, password_entry, ip_esp32_entry,
                 mqtt_client_name_entry, mqtt_server_entry, mqtt_port_entry,
-                receive_topic_entry, send_topic_entry):
+                receive_topic_entry, send_topic_entry, port_clicked_entry):
     file_name = file_name_entry.get()
     ssid = ssid_entry.get()
     password = password_entry.get()
@@ -175,6 +207,7 @@ def save_values_page3(frame_list,target_frame,file_name_entry, ssid_entry, passw
     mqtt_port = mqtt_port_entry.get()
     receive_topic = receive_topic_entry.get()
     send_topic = send_topic_entry.get()
+    device_port = port_clicked_entry.get()
 
 
     # Verificar si algún campo está vacío o si mqtt_port no es válido
@@ -194,6 +227,7 @@ def save_values_page3(frame_list,target_frame,file_name_entry, ssid_entry, passw
         set_mqtt_port(mqtt_port)
         set_receive_topic(receive_topic)
         set_send_topic(send_topic)
+        set_device_port(device_port)
 
 
         print("File Name:", file_name)
@@ -205,5 +239,7 @@ def save_values_page3(frame_list,target_frame,file_name_entry, ssid_entry, passw
         print("MQTT Port:", mqtt_port)
         print("Receive Topic:", receive_topic)
         print("Send Topic:", send_topic)
+        print("Device Port:", device_port)
+
 
         raise_frame(frame_list, target_frame)
