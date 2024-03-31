@@ -1,6 +1,7 @@
 # model.py
+import tensorflow as tf
 from keras.models import Sequential
-from keras.layers import LSTM, Dense, Dropout
+from keras.layers import *
 from keras.optimizers import Adam
 from keras.losses import MeanSquaredError
 from contextlib import redirect_stdout

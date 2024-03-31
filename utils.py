@@ -7,6 +7,7 @@ from user_input import set_file_name,set_file_directory,set_ssid,set_password,se
 from user_input import get_file_name,get_file_directory,get_ssid,get_password,get_ip_esp32,get_mqtt_client_name,get_mqtt_server,get_mqtt_port,get_receive_topic,get_send_topic
 from template import prueba
 from config import MODELS_DIRECTORY, FQBN_ESP32
+import re
 
 
 def validate_input(new_value, data_type, data_length=None):
@@ -112,7 +113,24 @@ def create_sketch(console_text):
 
 
 def save_values_page1(frame_list, target_frame, model_entry):
-    model_str = model_entry.get(1.0, 'end')  # Obtener el texto del widget Text
+    # Obtener el texto del widget Text
+    model_str = model_entry.get(1.0, 'end').strip()
+
+    # Expresión regular para verificar el formato del texto del modelo
+    model_pattern = r"model\s*=\s*tf\.keras\.Sequential\(\[\s*(?:.*,\s*)*.*\s*\]\s*\)"
+
+    # Verificar si el campo del modelo está vacío
+    if not model_str:
+        messagebox.showerror("Error", "Please fill the field")
+        return
+    
+
+    # Verificar si el texto del modelo coincide con el patrón
+    if not re.match(model_pattern, model_str):
+        messagebox.showerror("Error", "The model does not have the expected structure.")
+        return
+
+
     set_model(model_str)
     print("model_str: ", model_str)
     # Llamar a la función para cambiar al frame 2
