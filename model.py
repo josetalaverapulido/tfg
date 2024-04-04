@@ -118,5 +118,6 @@ def train(console_text_widget, upload_sketch_button):
     # Convertir el modelo a C++
     porter = tf_porter(model, X_train, y_train)
     cpp_code = porter.to_cpp(instance_name='model', arena_size=4096)
+    print(cpp_code)
 
     upload_sketch_button.config(state='normal')

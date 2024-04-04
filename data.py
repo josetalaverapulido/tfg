@@ -61,5 +61,18 @@ def get_data():
     dates_val, X_val, y_val = dates[split1:split1 + split2], X[split1:split1 + split2], y[split1:split1 + split2]
     dates_test, X_test, y_test = dates[split1 + split2:], X[split1 + split2:], y[split1 + split2:]
 
+    print('X_train: \n', X_train)
+    print('y_train: \n', y_train)
+
+
+    # df_x_train = pd.DataFrame(X_train)
+    # df_x_train.to_csv('X_train.csv', index=False)
+
+    # df_y_train = pd.DataFrame(y_train)
+    # df_y_train.to_csv('X_train.csv', index=False)
+
+    np.savetxt('datos_x_entrenamiento.csv', X_train, delimiter=',')
+    np.savetxt('datos_y_entrenamiento.csv', y_train, delimiter=',')
+
 
     return dates_train, X_train, y_train, dates_val, X_val, y_val, dates_test, X_test, y_test

@@ -40,7 +40,7 @@ from model import train_async
 root = Tk() 
 root.title('TFG José Talavera Pulido')  # Setting title
 root.geometry("1280x720")  # Setting initial window size
-root.resizable(False,False) # Disabling window resizing
+#root.resizable(False,False) # Disabling window resizing
 
 # Configuring grid layout for the root window
 root.grid_rowconfigure(0, weight=1)
@@ -76,12 +76,39 @@ def center_window(window):
 
 # Function to create Page 1 elements
 def create_page1():
+    # Grid layout configuration for page 1, 7 rows and 6 columns
+    for i in range(7):
+        page1.grid_rowconfigure(i, weight=1)
+
+    for i in range(6):  
+        page1.grid_columnconfigure(i, weight=1)
+
     model_entry = Text(page1, width=100, height=30, font=("Helvetica", 12))
-    model_entry.pack(pady=20, padx=20)
+    model_entry.grid(row=0, column=0, padx=20, pady=20, rowspan=3, columnspan=6)  # Ajusta la ubicación del campo de entrada
+
+    batch_size_label = Label(page1, text="Batch Size:")
+    batch_size_label.grid(row=3, column=0, sticky='e')  # sticky='e' para alinear el texto a la derecha
+
+    batch_size_entry = create_numeric_entry(page1, 'int', data_length=3)
+    batch_size_entry.grid(row=3, column=1, sticky='w')  # sticky='w' para alinear el widget a la izquierda
+
+    epochs_label = Label(page1, text="Epochs:")
+    epochs_label.grid(row=3, column=2, sticky='e')
+
+    epochs_entry = create_numeric_entry(page1, 'int', data_length=4)
+    epochs_entry.grid(row=3, column=3, sticky='w')
+
+    adam_learning_rate_label = Label(page1, text="Adam Learning Rate:")
+    adam_learning_rate_label.grid(row=3, column=4, sticky='e')
+
+    adam_learning_rate_entry = create_numeric_entry(page1, 'float', data_length=6)
+    adam_learning_rate_entry.grid(row=3, column=5, sticky='w')
+
+    create_model_btn = Button(page1, text="Create Model", command=lambda: [save_values_page1([page1, page2, page3, page4], page2, model_entry, batch_size_entry, epochs_entry, adam_learning_rate_entry)], width=50)
+    create_model_btn.grid(row=6, column=0, columnspan=6, pady=20)  # Ajusta la ubicación del botón
 
 
-    create_model_btn = Button(page1, text="Create Model", command=lambda: [save_values_page1([page1,page2,page3,page4],page2, model_entry)], width=50)
-    create_model_btn.pack(pady=20)
+
 
 
 # Function to create Page 2 elements

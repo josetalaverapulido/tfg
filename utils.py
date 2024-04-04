@@ -1,4 +1,4 @@
-from model import set_model, set_batch_size, set_epochs, set_adam_learning_rate, cpp_code
+from model import set_model, set_batch_size, set_epochs, set_adam_learning_rate, get_cpp_code
 import tkinter as tk
 from tkinter import Entry, messagebox
 import subprocess
@@ -101,6 +101,7 @@ def create_sketch(console_text):
 
 
     #----------------- Crear modelo.h --------------
+    cpp_code = get_cpp_code()
     with open(MODELS_DIRECTORY + f"\{file_name}\model.h", "w") as archivo:
         archivo.write(cpp_code)
     print("archivo .h creado correctamente\n")
@@ -144,29 +145,39 @@ def create_sketch(console_text):
 
 
 
-def save_values_page1(frame_list, target_frame, model_entry):
-    # Obtener el texto del widget Text
+def save_values_page1(frame_list, target_frame, model_entry, batch_size_entry, epochs_entry, adam_learning_rate_entry):
+    
     model_str = model_entry.get(1.0, 'end').strip()
+    batch_size = batch_size_entry.get()
+    epochs = epochs_entry.get()
+    adam_learning_rate = adam_learning_rate_entry.get()
 
     # Expresión regular para verificar el formato del texto del modelo
     model_pattern = r"model\s*=\s*tf\.keras\.Sequential\(\[\s*(?:.*,\s*)*.*\s*\]\s*\)"
 
     # Verificar si el campo del modelo está vacío
-    if not model_str:
-        messagebox.showerror("Error", "Please fill the field")
+    if not model_str or not all([batch_size, epochs, adam_learning_rate]):
+        messagebox.showerror("Error", "Please fill in all fields")
         return
-    
-
     # Verificar si el texto del modelo coincide con el patrón
-    if not re.match(model_pattern, model_str):
+    elif not re.match(model_pattern, model_str):
         messagebox.showerror("Error", "The model does not have the expected structure.")
         return
+    else:
+        set_model(model_str)
+        print("model_str: ", model_str)
+        set_batch_size(batch_size)
+        set_epochs(epochs)
+        set_adam_learning_rate(adam_learning_rate)
+
+        print("Batch size:", batch_size)
+        print("Epochs:", epochs)
+        print("Adam learning rate:", adam_learning_rate)
+
+        # Llamar a la función para cambiar al frame 2
+        raise_frame(frame_list, target_frame)
 
 
-    set_model(model_str)
-    print("model_str: ", model_str)
-    # Llamar a la función para cambiar al frame 2
-    raise_frame(frame_list, target_frame)
 
 
 
