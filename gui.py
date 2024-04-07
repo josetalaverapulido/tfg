@@ -13,7 +13,7 @@ import subprocess
 
 
 #-----main-----
-from data import get_data
+from data import set_training_path, set_validation_path
 import os
 import sys
 from contextlib import redirect_stdout
@@ -30,7 +30,6 @@ from config import *
 from user_input import *
 from utils import save_values_page1,save_values_page2, save_values_page3, create_numeric_entry, raise_frame, create_sketch, get_port_list
 from model import train_async
-
 
 
 
@@ -249,7 +248,7 @@ def create_page3():
 
 # Function to create Page 4 elements
 def create_page4():
-    for i in range(3): 
+    for i in range(4): 
         page4.grid_rowconfigure(i, weight=1)
 
     for i in range(3): 
@@ -259,15 +258,35 @@ def create_page4():
     console_text = ScrolledText(page4, bg="black", fg="white", width=110)
     console_text.grid(row=0, column=0, columnspan=3, padx=30, pady=10)  
 
+    # Crear un recuadro de texto para mostrar la información del archivo seleccionado
+    train_file_label = Label(page4, text="No file chosen")
+    train_file_label.grid(row=1, column=2, padx=10, pady=10, sticky="w")
+
+    # Button to open CSV file
+    open_train_dataset_btn = Button(page4, text="Open Training Data File", command=lambda: set_training_path(train_file_label, train_model_button))
+    open_train_dataset_btn.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
+
+    # Crear un recuadro de texto para mostrar la información del archivo seleccionado
+    validation_file_label = Label(page4, text="No file chosen")
+    validation_file_label.grid(row=2, column=2, padx=10, pady=10, sticky="w")
+
+    # Button to open CSV file
+    open_val_dataset_btn = Button(page4, text="Open Validation Data File", command=lambda: set_validation_path(validation_file_label, train_model_button))
+    open_val_dataset_btn.grid(row=2, column=1, padx=10, pady=10, sticky="ew")
+
+
     back_button = Button(page4, text="Back", command=lambda: raise_frame([page1,page2,page3,page4],page3))
-    back_button.grid(row=2, column=0, padx=30, pady=5, sticky="ew")  
+    back_button.grid(row=3, column=0, padx=30, pady=5, sticky="ew")  
 
     train_model_button = Button(page4, text="Train model", command=lambda: train_async(console_text, upload_sketch_button))
-    train_model_button.grid(row=2, column=1, padx=30, pady=5, sticky="ew")  
+    train_model_button.grid(row=3, column=1, padx=30, pady=5, sticky="ew")  
 
     upload_sketch_button = Button(page4, text="Upload Sketch", command=lambda: create_sketch(console_text))
-    upload_sketch_button.grid(row=2, column=2, padx=30, pady=5, sticky="ew")  
+    upload_sketch_button.grid(row=3, column=2, padx=30, pady=5, sticky="ew")  
     
+
+    # Disable button until model is trained
+    train_model_button.config(state='disabled')
 
     # Disable button until model is trained
     upload_sketch_button.config(state='disabled')

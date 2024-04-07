@@ -1,78 +1,100 @@
-import pandas as pd
+import os
+from tkinter import filedialog
+from pathlib import Path
+from tkinter import messagebox
 import numpy as np
 
-# Función para crear los conjuntos de datos X--Y
-def create_window_xy(df, window_size, target_window_size):
-    X = []
+training_data_file_path = ""
+validation_data_file_path = ""
+
+training_data_ready = False
+validation_data_ready = False
+
+def set_training_data_file_path(new_value):
+    global training_data_file_path
+    training_data_file_path = new_value
+
+def set_validation_data_file_path(new_value):
+    global validation_data_file_path
+    validation_data_file_path = new_value
+
+def get_training_data_file_path():
+    return training_data_file_path
+
+def get_validation_data_file_path():
+    return validation_data_file_path
+
+
+def get_file_path(file_label):
+    current_directory = os.path.dirname(os.path.abspath(__file__))
+
+    # Configure file types to only open CSV files
+    filetypes = [("CSV files", "*.csv")]
+
+    filepath = filedialog.askopenfilename(initialdir=current_directory, filetypes=filetypes)
+    
+    # Update the text of the text box
+    if filepath:  
+        file_label.config(text=os.path.basename(filepath))  
+    else:  
+        file_label.config(text="No file chosen")  
+    
+    filepath = Path(filepath)
+
+    return filepath
+
+
+
+def set_training_path(file_label, train_model_button):
+    global training_data_ready, validation_data_ready
+
+    filepath = get_file_path(file_label)
+    set_training_data_file_path(filepath)
+
+    training_data_ready = True
+    if training_data_ready and validation_data_ready:
+        train_model_button.config(state='normal')
+
+
+def set_validation_path(file_label, train_model_button):
+    global training_data_ready, validation_data_ready
+
+    filepath = get_file_path(file_label)
+    set_validation_data_file_path(filepath)
+
+    validation_data_ready = True
+    if training_data_ready and validation_data_ready:
+        train_model_button.config(state='normal')
+
+
+def get_data(filepath):
+    x = []
     y = []
-    dates = []
 
-    for i in range(len(df) - window_size - target_window_size + 1):
-        past_data = df.iloc[i:i+window_size]  # Datos pasados (ventana)
-        target_data = df.iloc[i+window_size:i+window_size+target_window_size]['Avg Temp(Celsius)']  # Valores objetivo de temperatura
+    with open(filepath, 'r') as file:
+        lines = file.readlines()
 
-        target_date = df.index[i+window_size+target_window_size-1]  # Fecha correspondiente al último valor objetivo
+        # Extract column names
+        column_names = lines[0].strip().split(',')
+        column_names = [col.lower() for col in column_names]
 
-        temp_humidity_pairs = past_data[['Avg Temp(Celsius)', 'Avg Humidity(%)']].values.tolist()
-        X.append(temp_humidity_pairs)  # Añadir los datos pasados a X
-        y.append(target_data.tolist())  # Añadir la lista de valores objetivo a y
-        dates.append(target_date)  # Añadir la fecha correspondiente a dates
+    try:
+        # Verify if all column names start with 'x' or 'y'
+        if not all(col.startswith('x') or col.startswith('y') for col in column_names):
+            raise ValueError("Error! At least one value in column_names does not begin with 'x' or 'y' ")
 
-    dates = np.array(dates)
-    X = np.array(X)
-    y = np.array(y)
+        # Count the number of 'x' and 'y' columns
+        count_x = sum(1 for col in column_names if col.startswith('x'))
+        count_y = sum(1 for col in column_names if col.startswith('y'))
 
-    return dates, X, y
+        # Process lines from the file, skipping the first line
+        for line in lines[1:]:
+            values = line.strip().split(',')
+            y.append([float(val) for val in values[0:count_y]])
+            x.append([float(val) for val in values[count_y:]])
 
+    except ValueError as e:
+        messagebox.showerror("Error", str(e) + "in " + str(filepath))
 
-def get_data():
-    # Suponiendo que 'data' es tu DataFrame con las columnas 'Datetime',  'Avg Temp(Celsius), Avg Humidity(%) y Precipitation(mm)'
-    dataset = pd.read_csv('MergedDataset.csv')
+    return np.array(x), np.array(y)
 
-    #Set Datetime as index
-    dataset['Datetime'] = pd.to_datetime(dataset['Datetime'])
-    dataset.set_index(dataset['Datetime'], inplace=True)
-
-    # Remove Datetime and Precipitation columns
-    columns_to_drop = ['Datetime', 'Precipitation(mm)']
-    dataset = dataset.drop(columns=columns_to_drop)
-
-    data = dataset.loc['2021-01-01 00:30:00':]
-
-
-    print(data.isna().sum())
-
-    data = data.fillna(method='ffill')
-    print(data.isna().sum())
-
-
-    # Crear los conjuntos de datos 'trainX' y 'trainY' utilizando la función
-    dates, X, y = create_window_xy(data, 24,24)
-
-
-    # Calcular la longitud de cada conjunto
-    total_rows = len(data)
-    split1 = int(total_rows * 0.7)  # 70% para train
-    split2 = int(total_rows * 0.2)  # 20% para validation
-    split3 = total_rows - split1 - split2  # Lo que queda para test
-
-    # Dividir el DataFrame en tres conjuntos
-    dates_train, X_train, y_train = dates[:split1], X[:split1], y[:split1]
-    dates_val, X_val, y_val = dates[split1:split1 + split2], X[split1:split1 + split2], y[split1:split1 + split2]
-    dates_test, X_test, y_test = dates[split1 + split2:], X[split1 + split2:], y[split1 + split2:]
-
-    print('X_train: \n', X_train)
-    print('y_train: \n', y_train)
-
-
-    # df_x_train = pd.DataFrame(X_train)
-    # df_x_train.to_csv('X_train.csv', index=False)
-
-    # df_y_train = pd.DataFrame(y_train)
-    # df_y_train.to_csv('X_train.csv', index=False)
-
-    np.savetxt('datos_x_entrenamiento.csv', X_train, delimiter=',')
-    np.savetxt('datos_y_entrenamiento.csv', y_train, delimiter=',')
-
-
-    return dates_train, X_train, y_train, dates_val, X_val, y_val, dates_test, X_test, y_test

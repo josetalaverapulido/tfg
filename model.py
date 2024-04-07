@@ -6,9 +6,12 @@ from keras.optimizers import Adam
 from keras.losses import MeanSquaredError
 from contextlib import redirect_stdout
 from io import StringIO
-from data import get_data
+from data import get_data, get_training_data_file_path, get_validation_data_file_path
 from everywhereml.code_generators.tensorflow import tf_porter
 import threading
+
+
+from tkinter import messagebox
 
 model = None
 batch_size = ""
@@ -92,32 +95,38 @@ def train(console_text_widget, upload_sketch_button):
     model.compile(optimizer=Adam(learning_rate=0.0001), loss=MeanSquaredError(), metrics=['mean_absolute_error'])
     
     # Obtener los datos en este hilo
-    dates_train, X_train, y_train, dates_val, X_val, y_val, dates_test, X_test, y_test = get_data()
+    training_data_file_path = get_training_data_file_path()
+    validation_data_file_path = get_validation_data_file_path()
 
-    # Entrenar el modelo con los datos recién obtenidos
-    history = model.fit(X_train, y_train, validation_data=(X_val, y_val), batch_size=16, epochs=1)
+    X_train, y_train = get_data(training_data_file_path)
+    X_val, y_val = get_data(validation_data_file_path)
+
+    try:
+        # Entrenar el modelo con los datos recién obtenidos
+        history = model.fit(X_train, y_train, validation_data=(X_val, y_val), batch_size=16, epochs=1)
 
 
+        # Obtener el último valor de cada métrica de entrenamiento
+        last_train_loss = history.history['loss'][-1]
+        last_train_mean_absolute_error = history.history['mean_absolute_error'][-1]
+
+        # Obtener el último valor de cada métrica de validación
+        last_val_loss = history.history['val_loss'][-1]
+        last_val_mean_absolute_error = history.history['val_mean_absolute_error'][-1]
+
+        # Imprimir los últimos valores de las métricas
+        console_text_widget.insert('end', "\nTRAIN LOSS: {}\n".format(last_train_loss))
+        console_text_widget.insert('end', "MEAN ABSOLUTE ERROR: {}\n".format(last_train_mean_absolute_error))
+        console_text_widget.insert('end', "VALIDATION ERROR: {}\n".format(last_val_loss))
+        console_text_widget.insert('end', "MEAN ABSOLUTE ERROR: {}\n".format(last_val_mean_absolute_error))
+
+        # Convertir el modelo a C++
+        porter = tf_porter(model, X_train, y_train)
+        cpp_code = porter.to_cpp(instance_name='model', arena_size=4096)
+        print(cpp_code)
+
+        upload_sketch_button.config(state='normal')
+    except ValueError:
+        messagebox.showerror("Error", "Input data shape is not compatible with model expected shape")
 
 
-
-    # Obtener el último valor de cada métrica de entrenamiento
-    last_train_loss = history.history['loss'][-1]
-    last_train_mean_absolute_error = history.history['mean_absolute_error'][-1]
-
-    # Obtener el último valor de cada métrica de validación
-    last_val_loss = history.history['val_loss'][-1]
-    last_val_mean_absolute_error = history.history['val_mean_absolute_error'][-1]
-
-    # Imprimir los últimos valores de las métricas
-    console_text_widget.insert('end', "\nTRAIN LOSS: {}\n".format(last_train_loss))
-    console_text_widget.insert('end', "MEAN ABSOLUTE ERROR: {}\n".format(last_train_mean_absolute_error))
-    console_text_widget.insert('end', "VALIDATION ERROR: {}\n".format(last_val_loss))
-    console_text_widget.insert('end', "MEAN ABSOLUTE ERROR: {}\n".format(last_val_mean_absolute_error))
-
-    # Convertir el modelo a C++
-    porter = tf_porter(model, X_train, y_train)
-    cpp_code = porter.to_cpp(instance_name='model', arena_size=4096)
-    print(cpp_code)
-
-    upload_sketch_button.config(state='normal')
