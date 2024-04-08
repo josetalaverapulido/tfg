@@ -178,34 +178,7 @@ def save_values_page1(frame_list, target_frame, model_entry, batch_size_entry, e
 
 
 
-
-
-def save_values_page2(frame_list, target_frame, batch_size_entry, epochs_entry, adam_learning_rate_entry):
-    batch_size = batch_size_entry.get()
-    epochs = epochs_entry.get()
-    adam_learning_rate = adam_learning_rate_entry.get()
-
-
-    # Verificar si hay campos vacíos
-    if not all([batch_size, epochs, adam_learning_rate]):
-        messagebox.showerror("Error", "Please fill in all fields")
-        return
-
-    else:
-        set_batch_size(batch_size)
-        set_epochs(epochs)
-        set_adam_learning_rate(adam_learning_rate)
-
-        print("Batch size:", batch_size)
-        print("Epochs:", epochs)
-        print("Adam learning rate:", adam_learning_rate)
-
-        # Llamar a la función para cambiar al frame 3
-        raise_frame(frame_list, target_frame)
-
-
-
-def save_values_page3(frame_list,target_frame,file_name_entry, ssid_entry, password_entry, ip_esp32_entry,
+def save_values_page2(frame_list,target_frame,file_name_entry, ssid_entry, password_entry, ip_esp32_entry,
                 mqtt_client_name_entry, mqtt_server_entry, mqtt_port_entry,
                 receive_topic_entry, send_topic_entry, port_clicked_entry):
     file_name = file_name_entry.get()
