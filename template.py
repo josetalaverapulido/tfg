@@ -1,6 +1,3 @@
-
-# Plantilla del código Arduino en Python
-
 def generar_codigo_arduino(ssid, password, mqtt_client_name, server, port, receive_topic, send_topic):
     codigo_arduino = f'''
 #include <WiFi.h> // For connecting ESP32 to WiFi

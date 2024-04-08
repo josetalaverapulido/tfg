@@ -5,7 +5,7 @@ from user_input import get_file_name,get_file_directory,get_ssid,get_password,ge
 from template import prueba
 from config import MODELS_DIRECTORY, FQBN_ESP32
 import re
-
+import threading
 import customtkinter as ctk
 from tkinter import messagebox
 

@@ -1,7 +1,4 @@
 from data import set_training_path, set_validation_path
-import os
-from config import *
-from user_input import *
 from utils import save_values_page1, save_values_page2, create_numeric_entry, raise_frame, create_sketch, get_port_list
 from model import train_async
 import customtkinter as ctk
@@ -49,6 +46,7 @@ page3.grid(row=0, column=0, sticky="nsew")
 
 # Function to create Page 1 elements
 def create_page1():
+
     # Grid layout configuration for page 1, 7 rows and 6 columns
     for i in range(7):
         page1.grid_rowconfigure(i, weight=1)
@@ -56,14 +54,16 @@ def create_page1():
     for i in range(6):  
         page1.grid_columnconfigure(i, weight=1)
 
+    # Textbox for entering model architecture
     model_entry = ctk.CTkTextbox(master = page1, font=("helvetica",15))
-    model_entry.grid(row=0, column=0, padx=20, pady=20, rowspan=3, columnspan=6, sticky="nsew")  # Ajusta la ubicación del campo de entrada
+    model_entry.grid(row=0, column=0, padx=20, pady=20, rowspan=3, columnspan=6, sticky="nsew")  
 
+    # Labels and entry fields for batch size, epochs, and Adam learning rate
     batch_size_label = ctk.CTkLabel(page1, text="Batch Size:", font=("helvetica",13))
-    batch_size_label.grid(row=3, column=0, padx=20, sticky='e')  # sticky='e' para alinear el texto a la derecha
+    batch_size_label.grid(row=3, column=0, padx=20, sticky='e')  
 
     batch_size_entry = create_numeric_entry(page1, 'int', data_length=3)
-    batch_size_entry.grid(row=3, column=1,padx=20,  sticky='w')  # sticky='w' para alinear el widget a la izquierda
+    batch_size_entry.grid(row=3, column=1,padx=20,  sticky='w')  
 
     epochs_label = ctk.CTkLabel(page1, text="Epochs:", font=("helvetica",13))
     epochs_label.grid(row=3, column=2, padx=20, sticky='e')
@@ -77,12 +77,13 @@ def create_page1():
     adam_learning_rate_entry = create_numeric_entry(page1, 'float', data_length=6)
     adam_learning_rate_entry.grid(row=3, column=5, padx=20, sticky='w')
 
+    # Button to create model and proceed to next page
     create_model_btn = ctk.CTkButton(page1, text="Create Model", font=("helvetica",13), command=lambda: [save_values_page1([page1, page2, page3], page2, model_entry, batch_size_entry, epochs_entry, adam_learning_rate_entry)], width=50)
-    create_model_btn.grid(row=6, column=0, columnspan=6, padx=20, pady=20)  # Ajusta la ubicación del botón
+    create_model_btn.grid(row=6, column=0, columnspan=6, padx=20, pady=20)  
 
 
 
-# Function to create Page 3 elements
+# Function to create Page 2 elements
 def create_page2():
     
     # Grid layout configuration for page 2, 10 rows and 2 columns
@@ -92,7 +93,7 @@ def create_page2():
     for i in range(2):  
         page2.grid_columnconfigure(i, weight=1)
 
-
+    # Entry fields for user input
     file_name_label = ctk.CTkLabel(page2, text="File name:")
     file_name_label.grid(row=0, column=0, padx=10, pady=10, sticky="e")  
 
@@ -108,6 +109,7 @@ def create_page2():
     password_label = ctk.CTkLabel(page2, text="Password:")
     password_label.grid(row=2, column=0, padx=10, pady=10, sticky="e")  
 
+    # Entry field for password, showing bullet characters for security
     password_entry = ctk.CTkEntry(page2, show="•")
     password_entry.grid(row=2, column=1, padx=10, pady=10, sticky="w") 
 
@@ -132,6 +134,7 @@ def create_page2():
     mqtt_port_label = ctk.CTkLabel(page2, text="MQTT Port:")
     mqtt_port_label.grid(row=6, column=0, padx=10, pady=10, sticky="e")  
 
+    # Entry field for MQTT port, restrict input to integers
     mqtt_port_entry = create_numeric_entry(page2, 'int', data_length=4)
     mqtt_port_entry.grid(row=6, column=1, padx=10, pady=10, sticky="w") 
 
@@ -148,18 +151,19 @@ def create_page2():
     send_topic_entry.grid(row=8, column=1, padx=10, pady=10, sticky="w")  
 
 
-    # Dropdown menu
+    # Dropdown menu for device port selection
     dropdown_label = ctk.CTkLabel(page2, text="Device Port:")
     dropdown_label.grid(row=9, column=0, padx=10, pady=10, sticky="e")  
 
-    
+    # Get the list of available ports and set the default value
     port_list = get_port_list()
     port_clicked = ctk.StringVar(value = port_list[0])
 
+    # Dropdown menu to display available ports
     dropdown_menu = ctk.CTkOptionMenu(page2, variable = port_clicked, values = port_list)
     dropdown_menu.grid(row=9, column=1, padx=10, pady=10, sticky="w")  
 
-    # Creating page 3 buttons    
+    # Buttons for navigation and compiling/deploying   
     edit_config_btn = ctk.CTkButton(page2, text="Edit Configuration", command=lambda: raise_frame([page1,page2,page3],page1))
     edit_config_btn.grid(row=10, column=0, padx=50, pady=10, sticky="ew")  
 
@@ -172,50 +176,51 @@ def create_page2():
 
 
 
-# Function to create Page 4 elements
+# Function to create Page 3 elements
 def create_page3():
+
     for i in range(4): 
         page3.grid_rowconfigure(i, weight=1)
 
     for i in range(3): 
         page3.grid_columnconfigure(i, weight=1)
 
-    # Creating console text area and buttons for actions
-    
+    # Creating console text area
     console_text = ScrolledText(page3, bg="black", fg="white")
     console_text.grid(row=0, column=0, columnspan=3, padx=20, pady=20, sticky="nsew")  
 
-    # Crear un recuadro de texto para mostrar la información del archivo seleccionado
+    # Label to display selected training data file
     train_file_label = ctk.CTkLabel(page3, text="No file chosen")
     train_file_label.grid(row=1, column=2, padx=10, pady=10, sticky="w")
 
-    # Button to open CSV file
+    # Button to open CSV file for training data
     open_train_dataset_btn = ctk.CTkButton(page3, text="Open Training Data File", command=lambda: set_training_path(train_file_label, train_model_button))
     open_train_dataset_btn.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
 
-    # Crear un recuadro de texto para mostrar la información del archivo seleccionado
+    # Label to display selected validation data file
     validation_file_label = ctk.CTkLabel(page3, text="No file chosen")
     validation_file_label.grid(row=2, column=2, padx=10, pady=10, sticky="w")
 
-    # Button to open CSV file
+    # Button to open CSV file for validation data
     open_val_dataset_btn = ctk.CTkButton(page3, text="Open Validation Data File", command=lambda: set_validation_path(validation_file_label, train_model_button))
     open_val_dataset_btn.grid(row=2, column=1, padx=10, pady=10, sticky="ew")
 
-
+    # Button to navigate back to the previous page
     back_button = ctk.CTkButton(page3, text="Back", command=lambda: raise_frame([page1,page2,page3],page2))
     back_button.grid(row=3, column=0, padx=30, pady=5, sticky="ew")  
 
+    # Button to train the model
     train_model_button = ctk.CTkButton(page3, text="Train model", command=lambda: train_async(console_text, upload_sketch_button))
-    train_model_button.grid(row=3, column=1, padx=30, pady=5, sticky="ew")  
+    train_model_button.grid(row=3, column=1, padx=30, pady=5, sticky="ew")
 
+    # Button to upload the sketch
     upload_sketch_button = ctk.CTkButton(page3, text="Upload Sketch", command=lambda: create_sketch(console_text))
     upload_sketch_button.grid(row=3, column=2, padx=30, pady=5, sticky="ew")  
-    
 
-    # Disable button until model is trained
+    # Disable train model button until model is trained
     train_model_button.configure(state='disabled')
 
-    # Disable button until model is trained
+    # Disable upload sketch button until model is trained
     upload_sketch_button.configure(state='disabled')
 
 
@@ -229,7 +234,6 @@ def show_gui():
     create_page1()
     create_page2()
     create_page3()
-
 
     # Displaying the first page and centering the window
     raise_frame([page1,page2,page3],page1)

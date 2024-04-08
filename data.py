@@ -25,6 +25,7 @@ def get_validation_data_file_path():
     return validation_data_file_path
 
 
+# Function to get the file path from the user through a file dialog
 def get_file_path(file_label):
     current_directory = os.path.dirname(os.path.abspath(__file__))
 
@@ -44,7 +45,7 @@ def get_file_path(file_label):
     return filepath
 
 
-
+# Training data file path
 def set_training_path(file_label, train_model_button):
     global training_data_ready, validation_data_ready
 
@@ -56,6 +57,7 @@ def set_training_path(file_label, train_model_button):
         train_model_button.configure(state='normal')
 
 
+# Validation data file path
 def set_validation_path(file_label, train_model_button):
     global training_data_ready, validation_data_ready
 
@@ -67,6 +69,7 @@ def set_validation_path(file_label, train_model_button):
         train_model_button.configure(state='normal')
 
 
+# Data must start with 'y' columns and then continue with 'x' columns
 def get_data(filepath):
     x = []
     y = []
@@ -83,8 +86,7 @@ def get_data(filepath):
         if not all(col.startswith('x') or col.startswith('y') for col in column_names):
             raise ValueError("Error! At least one value in column_names does not begin with 'x' or 'y' ")
 
-        # Count the number of 'x' and 'y' columns
-        count_x = sum(1 for col in column_names if col.startswith('x'))
+        # Count the number of 'y' columns
         count_y = sum(1 for col in column_names if col.startswith('y'))
 
         # Process lines from the file, skipping the first line
