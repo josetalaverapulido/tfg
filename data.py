@@ -35,9 +35,9 @@ def get_file_path(file_label):
     
     # Update the text of the text box
     if filepath:  
-        file_label.config(text=os.path.basename(filepath))  
+        file_label.configure(text=os.path.basename(filepath))  
     else:  
-        file_label.config(text="No file chosen")  
+        file_label.configure(text="No file chosen")  
     
     filepath = Path(filepath)
 
@@ -53,7 +53,7 @@ def set_training_path(file_label, train_model_button):
 
     training_data_ready = True
     if training_data_ready and validation_data_ready:
-        train_model_button.config(state='normal')
+        train_model_button.configure(state='normal')
 
 
 def set_validation_path(file_label, train_model_button):
@@ -64,7 +64,7 @@ def set_validation_path(file_label, train_model_button):
 
     validation_data_ready = True
     if training_data_ready and validation_data_ready:
-        train_model_button.config(state='normal')
+        train_model_button.configure(state='normal')
 
 
 def get_data(filepath):
