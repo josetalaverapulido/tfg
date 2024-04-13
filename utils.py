@@ -2,7 +2,7 @@ from model import set_model, set_batch_size, set_epochs, set_adam_learning_rate,
 import subprocess
 from user_input import set_file_name,set_file_directory,set_ssid,set_password,set_ip_esp32,set_mqtt_client_name,set_mqtt_server,set_mqtt_port,set_receive_topic,set_send_topic, set_device_port
 from user_input import get_file_name,get_file_directory,get_ssid,get_password,get_ip_esp32,get_mqtt_client_name,get_mqtt_server,get_mqtt_port,get_receive_topic,get_send_topic, get_device_port
-from template import prueba
+from template import set_arduino_code, get_arduino_code
 from config import MODELS_DIRECTORY, FQBN_ESP32
 import re
 import threading
@@ -15,7 +15,7 @@ def validate_input(new_value, data_type, data_length=None):
         return True
     try:
         if data_length is not None and len(new_value) > data_length:
-            return False  # Si el valor es más largo que la longitud máxima, retorna False
+            return False  
         if data_type == 'int':
             int(new_value)
         elif data_type == 'float':
@@ -56,7 +56,6 @@ def get_port_list():
 
     return port_list
 
-# raise_frame([frame1, frame3], frame2))
 
 def raise_frame(frame_list, target_frame):
     for frame in frame_list:
@@ -67,7 +66,7 @@ def raise_frame(frame_list, target_frame):
 
 
 def create_sketch_async(console_text):    
-    # Crear un hilo para ejecutar create_sketch()
+    # Create a thread to execute create_sketch()
     train_thread = threading.Thread(target=create_sketch, args=(console_text))
     train_thread.start()
 
@@ -75,7 +74,7 @@ def create_sketch_async(console_text):
 
 def create_sketch(console_text):    
 
-    #----------------- Crear Sketch --------------
+    #----------------- Create Sketch --------------
     file_name = get_file_name()
     
     create_sketch_command = f"arduino-cli sketch new {file_name}"
@@ -85,7 +84,7 @@ def create_sketch(console_text):
     except Exception as e:
         console_text.insert('end', str(e) + "\n")
 
-    #----------------- Crear .ino --------------
+    #----------------- Create .ino --------------
     ssid = get_ssid()
     password = get_password()
     mqtt_client_name = get_mqtt_client_name()
@@ -100,14 +99,14 @@ def create_sketch(console_text):
     print("archivo .ino creado correctamente \n")
 
 
-    #----------------- Crear modelo.h --------------
+    #----------------- Create modelo.h --------------
     cpp_code = get_cpp_code()
     with open(MODELS_DIRECTORY + f"\{file_name}\model.h", "w") as archivo:
         archivo.write(cpp_code)
     print("archivo .h creado correctamente\n")
 
  
-    #----------------- Compila Sketch --------------
+    #----------------- Compile Sketch --------------
     file_directory = get_file_directory()
     compile_command = f"arduino-cli compile --fqbn {FQBN_ESP32} {file_name}.ino"
 
@@ -120,7 +119,7 @@ def create_sketch(console_text):
         console_text.insert('end', str(e) + "\n")
 
 
-    #----------------- Carga Sketch --------------
+    #----------------- Upload Sketch --------------
     device_port = get_device_port()
     port, protocol = device_port.split("-")
 
@@ -135,13 +134,36 @@ def create_sketch(console_text):
         process = subprocess.Popen(upload_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=file_directory)
         stdout, stderr = process.communicate()
         output = stdout.decode("latin1") + stderr.decode("latin1")
-        console_text.delete('end-2l', 'end')  # Elimina la última línea antes de agregar el nuevo texto
+        console_text.delete('end-2l', 'end') 
         console_text.insert('end',"\n\n" + output)
     except Exception as e:
         console_text.insert('end', str(e) + "\n")
 
 
 
+
+def set_model_entry_page3(target_frame, model_entry):
+    arduino_code = get_arduino_code()
+    # Textbox for entering model architecture
+    model_entry = ctk.CTkTextbox(target_frame, font=("helvetica",15))
+    # Configure format for predefined text
+    model_entry.tag_config('predefined', foreground='#7BC9FF')
+
+    # Insert predefined text
+    model_entry.insert("1.0", arduino_code, 'predefined')
+    model_entry.grid(row=0, column=0, padx=20, pady=20, columnspan=2, sticky="nsew")  
+
+    # Function to apply format to user-entered text
+    def apply_format(event):
+        # If keyboard event is not from predefined text
+        if model_entry.index("insert") != "1.0":
+            # Remove any previous formatting and set color directly to white
+            model_entry.tag_remove('predefined', "insert linestart", "insert lineend")
+            model_entry.tag_config('insert', foreground='white')  # White color for user text
+
+    # Capture keyboard event
+    model_entry.bind("<Key>", apply_format)
+    
 
 
 def save_values_page1(frame_list, target_frame, model_entry, batch_size_entry, epochs_entry, adam_learning_rate_entry):
@@ -151,14 +173,14 @@ def save_values_page1(frame_list, target_frame, model_entry, batch_size_entry, e
     epochs = epochs_entry.get()
     adam_learning_rate = adam_learning_rate_entry.get()
 
-    # Expresión regular para verificar el formato del texto del modelo
+    # Regular expression to verify the format of the model text
     model_pattern = r"model\s*=\s*tf\.keras\.Sequential\(\[\s*(?:.*,\s*)*.*\s*\]\s*\)"
 
-    # Verificar si el campo del modelo está vacío
+    # Check if the model field is empty
     if not model_str or not all([batch_size, epochs, adam_learning_rate]):
         messagebox.showerror("Error", "Please fill in all fields")
         return
-    # Verificar si el texto del modelo coincide con el patrón
+    # Check if the model text matches the pattern
     elif not re.match(model_pattern, model_str):
         messagebox.showerror("Error", "The model does not have the expected structure.")
         return
@@ -173,14 +195,15 @@ def save_values_page1(frame_list, target_frame, model_entry, batch_size_entry, e
         print("Epochs:", epochs)
         print("Adam learning rate:", adam_learning_rate)
 
-        # Llamar a la función para cambiar al frame 2
+        # Call function to switch to frame 2
         raise_frame(frame_list, target_frame)
+
 
 
 
 def save_values_page2(frame_list,target_frame,file_name_entry, ssid_entry, password_entry, ip_esp32_entry,
                 mqtt_client_name_entry, mqtt_server_entry, mqtt_port_entry,
-                receive_topic_entry, send_topic_entry, port_clicked_entry):
+                receive_topic_entry, send_topic_entry, port_clicked_entry, model_entry):
     file_name = file_name_entry.get()
     ssid = ssid_entry.get()
     password = password_entry.get()
@@ -193,7 +216,7 @@ def save_values_page2(frame_list,target_frame,file_name_entry, ssid_entry, passw
     device_port = port_clicked_entry.get()
 
 
-    # Verificar si algún campo está vacío o si mqtt_port no es válido
+    # Check if any field is empty or if mqtt_port is not valid
     if '' in [file_name, ssid, password, ip_esp32, mqtt_client_name, mqtt_server, mqtt_port, receive_topic, send_topic] \
             or not validate_input(mqtt_port, 'int', data_length=4):
         messagebox.showerror("Error", "Please fill in all fields")
@@ -211,8 +234,9 @@ def save_values_page2(frame_list,target_frame,file_name_entry, ssid_entry, passw
         set_receive_topic(receive_topic)
         set_send_topic(send_topic)
         set_device_port(device_port)
-
-
+        set_arduino_code(ssid, password, mqtt_client_name, mqtt_server, mqtt_port, receive_topic, send_topic)
+        
+        
         print("File Name:", file_name)
         print("SSID:", ssid)
         print("Password:", password)
@@ -224,5 +248,6 @@ def save_values_page2(frame_list,target_frame,file_name_entry, ssid_entry, passw
         print("Send Topic:", send_topic)
         print("Device Port:", device_port)
 
+        set_model_entry_page3(target_frame) 
 
         raise_frame(frame_list, target_frame)

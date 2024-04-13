@@ -1,6 +1,7 @@
 from data import set_training_path, set_validation_path
 from utils import save_values_page1, save_values_page2, create_numeric_entry, raise_frame, create_sketch, get_port_list
 from model import train_async
+from template import get_arduino_code
 import customtkinter as ctk
 from tkinter.scrolledtext import ScrolledText
 
@@ -34,14 +35,17 @@ root.grid_columnconfigure(0, weight=1)
 page1 = ctk.CTkFrame(root)
 page2 = ctk.CTkFrame(root)
 page3 = ctk.CTkFrame(root)
+page4 = ctk.CTkFrame(root)
 
 
 # Grid layout configuration for the frames
 page1.grid(row=0, column=0, sticky="nsew")
 page2.grid(row=0, column=0, sticky="nsew")
 page3.grid(row=0, column=0, sticky="nsew")
+page4.grid(row=0, column=0, sticky="nsew")
 
 
+model_entry = ctk.CTkTextbox(page3, font=("helvetica",15))
 
 
 # Function to create Page 1 elements
@@ -85,6 +89,7 @@ def create_page1():
 
 # Function to create Page 2 elements
 def create_page2():
+    global model_entry
     
     # Grid layout configuration for page 2, 10 rows and 2 columns
     for i in range(11):  
@@ -169,52 +174,71 @@ def create_page2():
 
     compile_btn = ctk.CTkButton(page2, text="Compile and Deploy", command=lambda: save_values_page2([page1,page2,page3], page3,file_name_entry, ssid_entry, password_entry,
                                                                     ip_esp32_entry, mqtt_client_name_entry, mqtt_server_entry, mqtt_port_entry,
-                                                                    receive_topic_entry, send_topic_entry, port_clicked))
+                                                                    receive_topic_entry, send_topic_entry, port_clicked, model_entry))
 
     compile_btn.grid(row=10, column=1, padx=50, pady=10, sticky="ew")  
+    
 
+
+
+# Function to create Page 1 elements
+def create_page3():
+    page3.grid_rowconfigure(0, weight=1)
+    page3.grid_columnconfigure(0, weight=1)
+    page3.grid_columnconfigure(1, weight=1)  # Añadido para asegurar que ambas columnas se expandan uniformemente
+
+
+    # Model entry
+
+    # Button to navigate back to the previous page
+    back_button = ctk.CTkButton(page3, text="Back", command=lambda: raise_frame([page1,page2,page3,page4],page2))
+    back_button.grid(row=1, column=0, padx=50, pady=10, sticky="ew")
+
+    # Button to create model and proceed to next page
+    create_model_btn = ctk.CTkButton(page3, text="Create Model", font=("helvetica",13),  command=lambda: raise_frame([page1,page2,page3,page4],page4))
+    create_model_btn.grid(row=1, column=1, padx=50, pady=10, sticky="ew")
 
 
 
 # Function to create Page 3 elements
-def create_page3():
+def create_page4():
 
     for i in range(4): 
-        page3.grid_rowconfigure(i, weight=1)
+        page4.grid_rowconfigure(i, weight=1)
 
     for i in range(3): 
-        page3.grid_columnconfigure(i, weight=1)
+        page4.grid_columnconfigure(i, weight=1)
 
     # Creating console text area
-    console_text = ScrolledText(page3, bg="black", fg="white")
+    console_text = ScrolledText(page4, bg="black", fg="white")
     console_text.grid(row=0, column=0, columnspan=3, padx=20, pady=20, sticky="nsew")  
 
     # Label to display selected training data file
-    train_file_label = ctk.CTkLabel(page3, text="No file chosen")
+    train_file_label = ctk.CTkLabel(page4, text="No file chosen")
     train_file_label.grid(row=1, column=2, padx=10, pady=10, sticky="w")
 
     # Button to open CSV file for training data
-    open_train_dataset_btn = ctk.CTkButton(page3, text="Open Training Data File", command=lambda: set_training_path(train_file_label, train_model_button))
+    open_train_dataset_btn = ctk.CTkButton(page4, text="Open Training Data File", command=lambda: set_training_path(train_file_label, train_model_button))
     open_train_dataset_btn.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
 
     # Label to display selected validation data file
-    validation_file_label = ctk.CTkLabel(page3, text="No file chosen")
+    validation_file_label = ctk.CTkLabel(page4, text="No file chosen")
     validation_file_label.grid(row=2, column=2, padx=10, pady=10, sticky="w")
 
     # Button to open CSV file for validation data
-    open_val_dataset_btn = ctk.CTkButton(page3, text="Open Validation Data File", command=lambda: set_validation_path(validation_file_label, train_model_button))
+    open_val_dataset_btn = ctk.CTkButton(page4, text="Open Validation Data File", command=lambda: set_validation_path(validation_file_label, train_model_button))
     open_val_dataset_btn.grid(row=2, column=1, padx=10, pady=10, sticky="ew")
 
     # Button to navigate back to the previous page
-    back_button = ctk.CTkButton(page3, text="Back", command=lambda: raise_frame([page1,page2,page3],page2))
+    back_button = ctk.CTkButton(page4, text="Back", command=lambda: raise_frame([page1,page2,page3,page4],page3))
     back_button.grid(row=3, column=0, padx=30, pady=5, sticky="ew")  
 
     # Button to train the model
-    train_model_button = ctk.CTkButton(page3, text="Train model", command=lambda: train_async(console_text, upload_sketch_button))
+    train_model_button = ctk.CTkButton(page4, text="Train model", command=lambda: train_async(console_text, upload_sketch_button))
     train_model_button.grid(row=3, column=1, padx=30, pady=5, sticky="ew")
 
     # Button to upload the sketch
-    upload_sketch_button = ctk.CTkButton(page3, text="Upload Sketch", command=lambda: create_sketch(console_text))
+    upload_sketch_button = ctk.CTkButton(page4, text="Upload Sketch", command=lambda: create_sketch(console_text))
     upload_sketch_button.grid(row=3, column=2, padx=30, pady=5, sticky="ew")  
 
     # Disable train model button until model is trained
@@ -234,8 +258,9 @@ def show_gui():
     create_page1()
     create_page2()
     create_page3()
+    create_page4()
 
     # Displaying the first page and centering the window
-    raise_frame([page1,page2,page3],page1)
+    raise_frame([page1,page2,page3,page4],page1)
 
     root.mainloop()

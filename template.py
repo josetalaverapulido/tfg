@@ -1,5 +1,9 @@
-def generar_codigo_arduino(ssid, password, mqtt_client_name, server, port, receive_topic, send_topic):
-    codigo_arduino = f'''
+arduino_code = ""
+
+def set_arduino_code(ssid, password, mqtt_client_name, server, port, receive_topic, send_topic):
+    global arduino_code
+
+    arduino_code = f'''
 #include <WiFi.h> // For connecting ESP32 to WiFi
 #include <PubSubClient.h>
 #include "model.h"
@@ -39,105 +43,7 @@ void wifiInit() {{
 
 // callback to execute when a message is received
 void OnMqttReceived(char* topic, byte* payload, unsigned int length) {{
-  // Crear un buffer para almacenar el payload como una cadena
-  char json[length + 1];
-  memcpy(json, payload, length);
-  json[length] = '\0';
-
-  // Analizar el JSON recibido
-  DynamicJsonDocument doc(1024);
-  DeserializationError error = deserializeJson(doc, json);
-
-  // Verificar si ocurrió un error durante el análisis del JSON
-  if (error) {{
-    Serial.print("Error al analizar el JSON: ");
-    Serial.println(error.c_str());
-    return;
-  }}
-
-  // Variable para indicar si todos los valores son correctos
-  bool todosCorrectos = true;
-
-  // Verificar si el JSON contiene solo un campo y es uno de los esperados
-  if (doc.size() == 1) {{
-    if (doc.containsKey("value")) {{
-      JsonArray valueArray = doc["value"].as<JsonArray>();
-      for (int i = 0; i < valueArray.size(); i++) {{
-        if (!valueArray[i].is<float>()) {{
-          todosCorrectos = false;
-          break;
-        }}
-      }}
-      if (todosCorrectos) {{
-        for (int i = 0; i < valueArray.size(); i++) {{
-          Serial.print("[");
-          Serial.print(valueArray[i].as<float>(), 2); // Imprime solo 2 decimales
-          Serial.println("]");
-
-        }}
-      }} else {{
-        Serial.println("Error: El valor no es un número flotante.");
-      }}
-    }} else if (doc.containsKey("array")) {{
-      JsonArray array = doc["array"].as<JsonArray>();
-      for (int i = 0; i < array.size(); i++) {{
-        if (!array[i].is<float>()) {{
-          todosCorrectos = false;
-          break;
-        }}
-      }}
-      if (todosCorrectos) {{
-          Serial.print("[");
-          for (int i = 0; i < array.size(); i++) {{
-              Serial.print(array[i].as<float>(), 2); // Imprime solo 2 decimales
-              if (i < array.size() - 1) {{
-                  Serial.print(", ");
-              }}
-          }}
-          Serial.println("]");
-      }} else {{
-        Serial.println("Error: Uno o más valores no son números flotantes.");
-      }}
-    }} else if (doc.containsKey("bi-array")) {{
-      JsonArray biArray = doc["bi-array"].as<JsonArray>();
-      for (int i = 0; i < biArray.size(); i++) {{
-        JsonArray innerArray = biArray[i].as<JsonArray>();
-        for (int j = 0; j < innerArray.size(); j++) {{
-          if (!innerArray[j].is<float>()) {{
-            todosCorrectos = false;
-            break;
-          }}
-        }}
-        if (!todosCorrectos) {{
-          break;
-        }}
-      }}
-      if (todosCorrectos) {{
-        Serial.print("[");
-        for (int i = 0; i < biArray.size(); i++) {{
-            JsonArray innerArray = biArray[i].as<JsonArray>();
-            Serial.print("[");
-            for (int j = 0; j < innerArray.size(); j++) {{
-                Serial.print(innerArray[j].as<float>(), 2); // Imprime solo 2 decimales
-                if (j < innerArray.size() - 1) {{
-                    Serial.print(", ");
-                }}
-            }}
-            Serial.print("]");
-            if (i < biArray.size() - 1) {{
-                Serial.print(", ");
-            }}
-        }}
-        Serial.println("]");
-      }} else {{
-        Serial.println("Error: Uno o más valores no son números flotantes.");
-      }}
-    }} else {{
-      Serial.println("Error: El JSON recibido no cumple con el formato esperado.");
-    }}
-  }} else {{
-    Serial.println("Error: El JSON recibido no cumple con el formato esperado.");
-  }}
+  
 }}
 
 // connects or reconnects to MQTT
@@ -181,60 +87,17 @@ void loop() {{
   mqttClient.loop();
 }}
 '''
-    return codigo_arduino
+
+
+def get_arduino_code():
+  print("aarduino_code: ", arduino_code)
+  return arduino_code
 
 
 
 
 
 
-
-
-
-
-
-
-def generar_codigo_arduino():
-  codigo_arduino = f'''
-#include <ArduinoOTA.h>  // For enabling over-the-air updates
-#include <WiFi.h>        // For connecting ESP32 to WiFi
-
-char* ssid     = "vodafoneC080";
-char* password = "JoSE.carCHEleJO.arBOL";
-
-
-#include<Arduino.h>
-
-#define LED 2
-
-
-void setup() {{
-Serial.begin(115200); // SERIAL BAUD RATE
-pinMode(LED, OUTPUT);
-WiFi.begin(ssid, password);  // Connect to WiFi - defaults to WiFi Station mode
-
-// Ensure WiFi is connected
-while (WiFi.status() != WL_CONNECTED) {{
-    delay(500);
-}}
-
-ArduinoOTA.begin();  // Starts OTA
-}}
-
-
-// the loop function runs over and over again forever
-void loop() {{
-digitalWrite(LED, HIGH);  //LED PIN SET HIGH
-Serial.println("LED ON"); // LED TURN ON
-delay(1000);              // 1 SEC DELAY
-digitalWrite(LED, LOW);   //LED PIN SET LOW
-Serial.println("LED OFF"); // LED TURN OFF
-delay(1000);               // 1 SEC DELAY
-ArduinoOTA.handle();  // Handles a code update request
-}}
-    '''
-
-  return codigo_arduino
 
 
 
