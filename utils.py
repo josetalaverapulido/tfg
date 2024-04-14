@@ -2,7 +2,7 @@ from model import set_model, set_batch_size, set_epochs, set_adam_learning_rate,
 import subprocess
 from user_input import set_file_name,set_file_directory,set_ssid,set_password,set_ip_esp32,set_mqtt_client_name,set_mqtt_server,set_mqtt_port,set_receive_topic,set_send_topic, set_device_port
 from user_input import get_file_name,get_file_directory,get_ssid,get_password,get_ip_esp32,get_mqtt_client_name,get_mqtt_server,get_mqtt_port,get_receive_topic,get_send_topic, get_device_port
-from template import set_arduino_code, get_arduino_code
+from template import set_arduino_code_template, get_arduino_code
 from config import MODELS_DIRECTORY, FQBN_ESP32
 import re
 import threading
@@ -142,29 +142,6 @@ def create_sketch(console_text):
 
 
 
-def set_model_entry_page3(target_frame, model_entry):
-    arduino_code = get_arduino_code()
-    # Textbox for entering model architecture
-    model_entry = ctk.CTkTextbox(target_frame, font=("helvetica",15))
-    # Configure format for predefined text
-    model_entry.tag_config('predefined', foreground='#7BC9FF')
-
-    # Insert predefined text
-    model_entry.insert("1.0", arduino_code, 'predefined')
-    model_entry.grid(row=0, column=0, padx=20, pady=20, columnspan=2, sticky="nsew")  
-
-    # Function to apply format to user-entered text
-    def apply_format(event):
-        # If keyboard event is not from predefined text
-        if model_entry.index("insert") != "1.0":
-            # Remove any previous formatting and set color directly to white
-            model_entry.tag_remove('predefined', "insert linestart", "insert lineend")
-            model_entry.tag_config('insert', foreground='white')  # White color for user text
-
-    # Capture keyboard event
-    model_entry.bind("<Key>", apply_format)
-    
-
 
 def save_values_page1(frame_list, target_frame, model_entry, batch_size_entry, epochs_entry, adam_learning_rate_entry):
     
@@ -199,6 +176,27 @@ def save_values_page1(frame_list, target_frame, model_entry, batch_size_entry, e
         raise_frame(frame_list, target_frame)
 
 
+def set_model_entry_page3(target_frame, model_entry):
+    arduino_code = get_arduino_code()
+    
+    # Configure format for predefined text
+    model_entry.tag_config('predefined', foreground='#7BC9FF')
+
+    # Insert predefined text
+    model_entry.delete("1.0", 'end')
+    model_entry.insert("1.0", arduino_code, 'predefined')
+
+    # Function to apply format to user-entered text
+    def apply_format(event):
+        # If keyboard event is not from predefined text
+        if model_entry.index("insert") != "1.0":
+            # Remove any previous formatting and set color directly to white
+            model_entry.tag_remove('predefined', "insert linestart", "insert lineend")
+            model_entry.tag_config('insert', foreground='white')  # White color for user text
+
+    # Capture keyboard event
+    model_entry.bind("<Key>", apply_format)
+    
 
 
 def save_values_page2(frame_list,target_frame,file_name_entry, ssid_entry, password_entry, ip_esp32_entry,
@@ -234,7 +232,7 @@ def save_values_page2(frame_list,target_frame,file_name_entry, ssid_entry, passw
         set_receive_topic(receive_topic)
         set_send_topic(send_topic)
         set_device_port(device_port)
-        set_arduino_code(ssid, password, mqtt_client_name, mqtt_server, mqtt_port, receive_topic, send_topic)
+        set_arduino_code_template(ssid, password, mqtt_client_name, mqtt_server, mqtt_port, receive_topic, send_topic)
         
         
         print("File Name:", file_name)
@@ -248,6 +246,6 @@ def save_values_page2(frame_list,target_frame,file_name_entry, ssid_entry, passw
         print("Send Topic:", send_topic)
         print("Device Port:", device_port)
 
-        set_model_entry_page3(target_frame) 
+        set_model_entry_page3(target_frame, model_entry) 
 
         raise_frame(frame_list, target_frame)

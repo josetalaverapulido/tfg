@@ -1,7 +1,7 @@
 from data import set_training_path, set_validation_path
 from utils import save_values_page1, save_values_page2, create_numeric_entry, raise_frame, create_sketch, get_port_list
 from model import train_async
-from template import get_arduino_code
+from template import get_arduino_code, set_arduino_code
 import customtkinter as ctk
 from tkinter.scrolledtext import ScrolledText
 
@@ -45,7 +45,6 @@ page3.grid(row=0, column=0, sticky="nsew")
 page4.grid(row=0, column=0, sticky="nsew")
 
 
-model_entry = ctk.CTkTextbox(page3, font=("helvetica",15))
 
 
 # Function to create Page 1 elements
@@ -88,8 +87,7 @@ def create_page1():
 
 
 # Function to create Page 2 elements
-def create_page2():
-    global model_entry
+def create_page2(model_entry):
     
     # Grid layout configuration for page 2, 10 rows and 2 columns
     for i in range(11):  
@@ -189,16 +187,18 @@ def create_page3():
 
 
     # Model entry
-
+    model_entry = ctk.CTkTextbox(page3, font=("helvetica",15))
+    model_entry.grid(row=0, column=0, padx=20, pady=20, columnspan=2, sticky="nsew")  
+    
     # Button to navigate back to the previous page
     back_button = ctk.CTkButton(page3, text="Back", command=lambda: raise_frame([page1,page2,page3,page4],page2))
     back_button.grid(row=1, column=0, padx=50, pady=10, sticky="ew")
 
-    # Button to create model and proceed to next page
-    create_model_btn = ctk.CTkButton(page3, text="Create Model", font=("helvetica",13),  command=lambda: raise_frame([page1,page2,page3,page4],page4))
+    # Button to create model and proceed to next page 
+    create_model_btn = ctk.CTkButton(page3, text="Create Model", font=("helvetica",13),  command=lambda:  [raise_frame([page1,page2,page3,page4],page4), set_arduino_code(model_entry.get("1.0",'end-1c'))])
     create_model_btn.grid(row=1, column=1, padx=50, pady=10, sticky="ew")
 
-
+    return model_entry
 
 # Function to create Page 3 elements
 def create_page4():
@@ -256,8 +256,8 @@ def show_gui():
 
     # Creating elements for all pages
     create_page1()
-    create_page2()
-    create_page3()
+    model_entry_page3 = create_page3()
+    create_page2(model_entry_page3)
     create_page4()
 
     # Displaying the first page and centering the window
