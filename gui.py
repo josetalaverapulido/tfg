@@ -267,7 +267,6 @@ import threading
 #     root.mainloop()
 
 
-
 class GUI(ctk.CTk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -294,18 +293,34 @@ class GUI(ctk.CTk):
         root.grid_columnconfigure(0, weight=1)
   
         self.frames = {}
-  
-        for F in (Page1, Page2, Page3, Page4):
-            frame = F(root, self)
-            self.frames[F] = frame
-            frame.grid(row=0, column=0, sticky="nsew")
-  
+
+        frame = Page1(root, self)
+        self.frames[Page1] = frame
+        frame.grid(row=0, column=0, sticky="nsew")
+
+        frame = Page3(root, self)
+        model_entry = frame.get_model_entry()
+        self.frames[Page3] = frame
+        frame.grid(row=0, column=0, sticky="nsew")
+
+        frame = Page2(root, self, model_entry)
+        self.frames[Page2] = frame
+        frame.grid(row=0, column=0, sticky="nsew")
+
+
+
+        frame = Page4(root, self)
+        self.frames[Page4] = frame
+        frame.grid(row=0, column=0, sticky="nsew")
+
         self.show_frame(Page1)
-  
+
+
     def show_frame(self, cont):
         frame = self.frames[cont]
         frame.tkraise()
         
+
 
 class Page1(ctk.CTkFrame):
     def __init__(self, parent, controller):
@@ -342,22 +357,24 @@ class Page1(ctk.CTkFrame):
         adam_learning_rate_entry.grid(row=3, column=5, padx=20, sticky='w')
 
         # Button to create model and proceed to next page
-        create_model_btn = ctk.CTkButton(self, text="Create Model", font=("helvetica",13), command=lambda: threading.Thread(target=save_values_page1(controller, Page2, model_entry, batch_size_entry, epochs_entry, adam_learning_rate_entry)).start(),  width=50)        
+        create_model_btn = ctk.CTkButton(self, text="Create Model", font=("helvetica",13), command=lambda:save_values_page1(controller, Page2, model_entry, batch_size_entry, epochs_entry, adam_learning_rate_entry),  width=50)        
         create_model_btn.grid(row=6, column=0, columnspan=6, padx=20, pady=20)  
-
+        #command=lambda: threading.Thread(target=save_values_page1(controller, Page2, model_entry, batch_size_entry, epochs_entry, adam_learning_rate_entry)).start()
 
         
   
 class Page2(ctk.CTkFrame):
-    def __init__(self, parent, controller):
+    def __init__(self, parent, controller, model_entry):
         super().__init__(parent)
-        
+
         # Grid layout configuration for page 2, 10 rows and 2 columns
         for i in range(11):  
             self.grid_rowconfigure(i, weight=1)
 
         for i in range(2):  
             self.grid_columnconfigure(i, weight=1)
+            
+        self.model_entry = model_entry  # Guardar model_entry como un atributo de la instancia de Page2
 
         # Entry fields for user input
         file_name_label = ctk.CTkLabel(self, text="File name:")
@@ -429,18 +446,20 @@ class Page2(ctk.CTkFrame):
         dropdown_menu = ctk.CTkOptionMenu(self, variable = port_clicked, values = port_list)
         dropdown_menu.grid(row=9, column=1, padx=10, pady=10, sticky="w")  
 
+        # MODIFICAR MODEL_ENTRY
+        self.model_entry.insert("1.0", "Texto insertado desde Page2")
+
         # Buttons for navigation and compiling/deploying   
         edit_config_btn = ctk.CTkButton(self, text="Edit Configuration", command=lambda: controller.show_frame(Page1))
         edit_config_btn.grid(row=10, column=0, padx=50, pady=10, sticky="ew")  
 
-        # MODIFICAR MODEL_ENTRY
         compile_btn = ctk.CTkButton(self, text="Compile and Deploy", command=lambda: save_values_page2(controller, Page3, file_name_entry, ssid_entry, password_entry, ip_esp32_entry,
                                                                                                         mqtt_client_name_entry, mqtt_server_entry, mqtt_port_entry,
-                                                                                                        receive_topic_entry, send_topic_entry, port_clicked))
+                                                                                                        receive_topic_entry, send_topic_entry, port_clicked, self.model_entry))
+        
+        compile_btn.grid(row=10, column=1, padx=50, pady=10, sticky="ew")
 
-        compile_btn.grid(row=10, column=1, padx=50, pady=10, sticky="ew") 
 
- 
   
 class Page3(ctk.CTkFrame):
     def __init__(self, parent, controller):
@@ -452,8 +471,8 @@ class Page3(ctk.CTkFrame):
 
 
         # Model entry
-        model_entry = ctk.CTkTextbox(self, font=("helvetica",15))
-        model_entry.grid(row=0, column=0, padx=20, pady=20, columnspan=2, sticky="nsew")  
+        self.model_entry = ctk.CTkTextbox(self, font=("helvetica",15))
+        self.model_entry.grid(row=0, column=0, padx=20, pady=20, columnspan=2, sticky="nsew")  
         
         # Button to navigate back to the previous page
         back_button = ctk.CTkButton(self, text="Back", command=lambda: controller.show_frame(Page2))
@@ -462,7 +481,10 @@ class Page3(ctk.CTkFrame):
         # Button to create model and proceed to next page 
         create_model_btn = ctk.CTkButton(self, text="Create Model", font=("helvetica",13),  command=lambda: (controller.show_frame(Page4), set_arduino_code(model_entry.get("1.0",'end-1c'))))
         create_model_btn.grid(row=1, column=1, padx=50, pady=10, sticky="ew")
-        
+
+
+    def get_model_entry(self):
+        return self.model_entry
 
 
 class Page4(ctk.CTkFrame):

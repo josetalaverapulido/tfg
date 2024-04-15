@@ -140,7 +140,16 @@ def create_sketch(console_text):
         console_text.insert('end', str(e) + "\n")
 
 
+def setters(model_str,batch_size,epochs,adam_learning_rate):
+    set_model(model_str)
+    print("model_str: ", model_str)
+    set_batch_size(batch_size)
+    set_epochs(epochs)
+    set_adam_learning_rate(adam_learning_rate)
 
+    print("Batch size:", batch_size)
+    print("Epochs:", epochs)
+    print("Adam learning rate:", adam_learning_rate)
 
 
 def save_values_page1(controller, Page2, model_entry, batch_size_entry, epochs_entry, adam_learning_rate_entry):
@@ -162,21 +171,25 @@ def save_values_page1(controller, Page2, model_entry, batch_size_entry, epochs_e
         messagebox.showerror("Error", "The model does not have the expected structure.")
         return
     else:
-        set_model(model_str)
-        print("model_str: ", model_str)
-        set_batch_size(batch_size)
-        set_epochs(epochs)
-        set_adam_learning_rate(adam_learning_rate)
-
-        print("Batch size:", batch_size)
-        print("Epochs:", epochs)
-        print("Adam learning rate:", adam_learning_rate)
-
-        # Call function to switch to frame 2
+        threading.Thread(target=lambda:setters(model_str,batch_size,epochs,adam_learning_rate)).start()
         controller.show_frame(Page2)
 
 
-def set_model_entry_page3(target_frame, model_entry):
+        # set_model(model_str)
+        # print("model_str: ", model_str)
+        # set_batch_size(batch_size)
+        # set_epochs(epochs)
+        # set_adam_learning_rate(adam_learning_rate)
+
+        # print("Batch size:", batch_size)
+        # print("Epochs:", epochs)
+        # print("Adam learning rate:", adam_learning_rate)
+
+        # Call function to switch to frame 2
+        
+
+
+def set_model_entry_page3(model_entry):
     arduino_code = get_arduino_code()
     
     # Configure format for predefined text
@@ -201,7 +214,7 @@ def set_model_entry_page3(target_frame, model_entry):
 
 def save_values_page2(controller, Page3, file_name_entry, ssid_entry, password_entry, ip_esp32_entry,
                 mqtt_client_name_entry, mqtt_server_entry, mqtt_port_entry,
-                receive_topic_entry, send_topic_entry, port_clicked_entry):
+                receive_topic_entry, send_topic_entry, port_clicked_entry, model_entry):
     file_name = file_name_entry.get()
     ssid = ssid_entry.get()
     password = password_entry.get()
@@ -246,7 +259,6 @@ def save_values_page2(controller, Page3, file_name_entry, ssid_entry, password_e
         print("Send Topic:", send_topic)
         print("Device Port:", device_port)
 
-        #set_model_entry_page3(target_frame, model_entry) 
+        set_model_entry_page3(model_entry) 
 
-        # raise_frame(frame_list, target_frame)
         controller.show_frame(Page3)
