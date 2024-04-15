@@ -3,6 +3,7 @@ arduino_code = ""
 def set_arduino_code(new_value):
     global arduino_code
     arduino_code = new_value
+    print(arduino_code)
 
 def get_arduino_code():
   return arduino_code
