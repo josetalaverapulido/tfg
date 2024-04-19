@@ -1,10 +1,9 @@
 from data import set_training_path, set_validation_path
-from utils import save_values_page1, save_values_page2, create_numeric_entry, raise_frame, create_sketch_async, get_port_list
+from utils import save_values_page1, save_values_page2, create_numeric_entry, create_sketch_async, get_port_list
 from model import train_async
-from template import get_arduino_code, set_arduino_code
+from template import set_arduino_code
 import customtkinter as ctk
 from tkinter.scrolledtext import ScrolledText
-import threading
 from tkinter.ttk import *
 
 class GUI(ctk.CTk):
