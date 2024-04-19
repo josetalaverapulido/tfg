@@ -8,6 +8,7 @@ import re
 import threading
 import customtkinter as ctk
 from tkinter import messagebox
+import ipaddress
 
 
 def validate_input(new_value, data_type, data_length=None):
@@ -24,32 +25,25 @@ def validate_input(new_value, data_type, data_length=None):
     except ValueError:
         return False
 
-
 def create_numeric_entry(parent, data_type, data_length=None):
     vcmd = parent.register(lambda new_value: validate_input(new_value, data_type, data_length))
     entry = ctk.CTkEntry(parent, validate="key", validatecommand=(vcmd, '%P'))
     return entry
 
 
+
 def get_port_list():
-    # Run the command in the cmd
     result = subprocess.run('arduino-cli board list', capture_output=True, text=True, shell=True)
 
-    # Check if the execution was successful
     if result.returncode == 0:
-        # Get the output of the command
         output = result.stdout
-        
-        # Print the output to verify
         print(output)
-        
-        # Separate the output lines
+
         lines = output.strip().split('\n')
         
         # Create a list with the desired format: COMx-Protocol
         port_list = [line.split()[0] + '-' + line.split()[1] for line in lines[1:]]
         
-        # Print the port list
         print("port_list: ", port_list)
     else:
         print("Error executing the command.")
@@ -67,12 +61,14 @@ def raise_frame(frame_list, target_frame):
 
 def create_sketch_async(console_text):    
     # Create a thread to execute create_sketch()
-    train_thread = threading.Thread(target=create_sketch, args=(console_text))
+    train_thread = threading.Thread(target=create_sketch, args=(console_text,))
     train_thread.start()
 
 
 
+
 def create_sketch(console_text):    
+    console_text.delete("1.0",'end-1c')
 
     #----------------- Create Sketch --------------
     file_name = get_file_name()
@@ -80,40 +76,40 @@ def create_sketch(console_text):
     create_sketch_command = f"arduino-cli sketch new {file_name}"
     try:
         process = subprocess.Popen(create_sketch_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=MODELS_DIRECTORY)
-        console_text.insert('end', "\nSketch created succesfully\n")
+        console_text.insert('end', "Sketch created succesfully\n")
     except Exception as e:
         console_text.insert('end', str(e) + "\n")
 
-    #----------------- Create .ino --------------
-    ssid = get_ssid()
-    password = get_password()
-    mqtt_client_name = get_mqtt_client_name()
-    mqtt_server = get_mqtt_server()
-    mqtt_port = get_mqtt_port()
-    receive_topic = get_receive_topic()
-    send_topic = get_send_topic()
+    #----------------- Create .ino file --------------
+    arduino_code = get_arduino_code()
 
-    codigo_arduino = prueba(ssid, password, mqtt_client_name, mqtt_server, mqtt_port, receive_topic, send_topic)
-    with open(MODELS_DIRECTORY + f"\{file_name}\{file_name}.ino", "w") as archivo:
-        archivo.write(codigo_arduino)
-    print("archivo .ino creado correctamente \n")
+    try:
+        with open(MODELS_DIRECTORY + f"\{file_name}\{file_name}.ino", "w") as archivo:
+            archivo.write(arduino_code)
+        print("archivo .ino creado correctamente \n")
+    except Exception as e:
+        console_text.insert('end', str(e) + "\n")
 
-
-    #----------------- Create modelo.h --------------
+    #----------------- Create modelo.h file --------------
     cpp_code = get_cpp_code()
-    with open(MODELS_DIRECTORY + f"\{file_name}\model.h", "w") as archivo:
-        archivo.write(cpp_code)
-    print("archivo .h creado correctamente\n")
 
+    try:
+        with open(MODELS_DIRECTORY + f"\{file_name}\model.h", "w") as archivo:
+            archivo.write(cpp_code)
+        print("archivo .h creado correctamente\n")
+    except Exception as e:
+        console_text.insert('end', str(e) + "\n")
  
     #----------------- Compile Sketch --------------
+    console_text.insert('end',"IMPORTANT: HOLD DOWN BOOT MODE BUTTON IN DEVICE\n")
+
     file_directory = get_file_directory()
     compile_command = f"arduino-cli compile --fqbn {FQBN_ESP32} {file_name}.ino"
 
     try:
         process = subprocess.Popen(compile_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=file_directory)
         stdout, stderr = process.communicate()
-        output = stdout.decode("latin1") + stderr.decode("latin1")
+        output = stdout.decode("utf-8") + stderr.decode("utf-8")
         console_text.insert('end', output)
     except Exception as e:
         console_text.insert('end', str(e) + "\n")
@@ -140,13 +136,13 @@ def create_sketch(console_text):
         console_text.insert('end', str(e) + "\n")
 
 
-def setters(model_str,batch_size,epochs,adam_learning_rate):
+def setters_values_page1(model_str,batch_size,epochs,adam_learning_rate):
     set_model(model_str)
-    print("model_str: ", model_str)
     set_batch_size(batch_size)
     set_epochs(epochs)
     set_adam_learning_rate(adam_learning_rate)
 
+    print("model_str: ", model_str)
     print("Batch size:", batch_size)
     print("Epochs:", epochs)
     print("Adam learning rate:", adam_learning_rate)
@@ -166,26 +162,45 @@ def save_values_page1(controller, Page2, model_entry, batch_size_entry, epochs_e
     if not model_str or not all([batch_size, epochs, adam_learning_rate]):
         messagebox.showerror("Error", "Please fill in all fields")
         return
+        
     # Check if the model text matches the pattern
     elif not re.match(model_pattern, model_str):
         messagebox.showerror("Error", "The model does not have the expected structure.")
         return
     else:
-        threading.Thread(target=lambda:setters(model_str,batch_size,epochs,adam_learning_rate)).start()
+
+        # Check that the values of batch size, epochs, and Adam learning rate are numeric and within the allowed range
+        try:
+            batch_size = int(batch_size)
+
+            if not (1 <= batch_size <= 4096):
+                raise ValueError("Batch size must be between 1 and 4096.")
+        except ValueError as e:
+            messagebox.showerror("Error", str(e))
+            return
+
+        try:
+            epochs = int(epochs)
+
+            if not (1 <= epochs <= 1000):
+                raise ValueError("Epochs must be between 1 and 1000.")
+        except ValueError as e:
+            messagebox.showerror("Error", str(e))
+            return
+
+        try:
+            adam_learning_rate = float(adam_learning_rate)
+
+            if not (0.0001 <= adam_learning_rate <= 0.1):
+                raise ValueError("Adam learning rate must be between 0.1 and 0.0001.")
+        except ValueError as e:
+            messagebox.showerror("Error", str(e))
+            return
+
+
+        threading.Thread(target=lambda:setters_values_page1(model_str,batch_size,epochs,adam_learning_rate)).start()
         controller.show_frame(Page2)
 
-
-        # set_model(model_str)
-        # print("model_str: ", model_str)
-        # set_batch_size(batch_size)
-        # set_epochs(epochs)
-        # set_adam_learning_rate(adam_learning_rate)
-
-        # print("Batch size:", batch_size)
-        # print("Epochs:", epochs)
-        # print("Adam learning rate:", adam_learning_rate)
-
-        # Call function to switch to frame 2
         
 
 
@@ -226,12 +241,17 @@ def save_values_page2(controller, Page3, file_name_entry, ssid_entry, password_e
     send_topic = send_topic_entry.get()
     device_port = port_clicked_entry.get()
 
+    # Check if ip_esp32 is a valid IPv4
+    try:
+        ipaddress.ip_address(ip_esp32)
+    except ValueError as e:
+        messagebox.showerror("Error", str(e))
+        return
 
     # Check if any field is empty or if mqtt_port is not valid
     if '' in [file_name, ssid, password, ip_esp32, mqtt_client_name, mqtt_server, mqtt_port, receive_topic, send_topic] \
             or not validate_input(mqtt_port, 'int', data_length=4):
         messagebox.showerror("Error", "Please fill in all fields")
-
         return
     else:
         set_file_name(file_name)

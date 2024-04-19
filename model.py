@@ -9,6 +9,7 @@ from data import get_data, get_training_data_file_path, get_validation_data_file
 from everywhereml.code_generators.tensorflow import tf_porter
 import threading
 from tkinter import messagebox
+from tensorflow.keras.callbacks import Callback
 
 model = None
 batch_size = ""
@@ -36,6 +37,10 @@ def set_adam_learning_rate(new_value):
     global adam_learning_rate
     adam_learning_rate = new_value
 
+def set_cpp_code(new_value):
+    global cpp_code
+    cpp_code = new_value
+
 def get_model():
     return model
 
@@ -53,9 +58,27 @@ def get_cpp_code():
 
 
 
+class ProgressBarUpdater(Callback):
+    def __init__(self, progress_bar, total_epochs, progress_bar_label):
+        super(ProgressBarUpdater, self).__init__()
+        self.progress_bar = progress_bar
+        self.total_epochs = total_epochs
+        self.progress_bar_label = progress_bar_label
+
+    def on_epoch_end(self, epoch, logs=None):
+        # Calculate current progress
+        progress = (epoch + 1) / self.total_epochs * 100
+        self.progress_bar['value'] = progress
+
+        # If progress bar is complete, update label
+        if progress == 100:
+            self.progress_bar_label.configure(text="Model trained")
 
 
-def train_async(console_text_widget, upload_sketch_button):
+
+
+
+def train_async(console_text_widget, upload_sketch_button, progress_bar, progress_bar_label):
     # Redirect stdout to a buffer to capture model summary
     with StringIO() as buf, redirect_stdout(buf):
         model.summary()
@@ -64,22 +87,32 @@ def train_async(console_text_widget, upload_sketch_button):
     # Clear console text widget and insert model summary
     console_text_widget.delete('1.0', 'end')
     console_text_widget.insert('1.0', model_summary)
-
-    # Display compilation and training message
-    console_text_widget.insert('end', "\nCompiling and training model...")
-    console_text_widget.update()  # Update GUI to display message
+    console_text_widget.update() 
 
     # Create a thread to execute training process
-    train_thread = threading.Thread(target=train, args=(console_text_widget, upload_sketch_button))
+    train_thread = threading.Thread(target=train, args=(console_text_widget, upload_sketch_button, progress_bar, progress_bar_label))
     train_thread.start()
 
 
-def train(console_text_widget, upload_sketch_button):
-    # Global variable declaration
+def train(console_text_widget, upload_sketch_button, progress_bar, progress_bar_label):
     global cpp_code
 
+    # Modificar
+    user_adam_learning_rate = float(get_adam_learning_rate())
+    user_batch_size = int(get_batch_size())
+    user_epochs = int(get_epochs())
+
+
+    progress_bar['value'] = 0
+    progress_bar.grid(row=3, column=1, padx=10, pady=10, sticky="ew")
+    progress_bar.update_idletasks()
+
+    progress_bar_label.configure(text="Training model...")
+    progress_bar_label.grid(row=3, column=2, padx=10, pady=10, sticky="w")  
+    progress_bar_label.update_idletasks()
+
     # Compile the model
-    model.compile(optimizer=Adam(learning_rate=0.0001), loss=MeanSquaredError(), metrics=['mean_absolute_error'])
+    model.compile(optimizer=Adam(learning_rate=user_adam_learning_rate), loss=MeanSquaredError(), metrics=['mean_absolute_error'])
     
     # Obtain data in this thread
     training_data_file_path = get_training_data_file_path()
@@ -89,8 +122,14 @@ def train(console_text_widget, upload_sketch_button):
     X_val, y_val = get_data(validation_data_file_path)
 
     try:
+        console_text_widget.insert('end', "\nTraining model...")
+        console_text_widget.update()  
+
+        # Create the callback to update the progress bar
+        progress_callback = ProgressBarUpdater(progress_bar, user_epochs, progress_bar_label)
+
         # Train the model with the newly obtained data
-        history = model.fit(X_train, y_train, validation_data=(X_val, y_val), batch_size=16, epochs=1)
+        history = model.fit(X_train, y_train, validation_data=(X_val, y_val), batch_size=user_batch_size, epochs=user_epochs, callbacks=[progress_callback])
 
         # Get the last value of each training metric
         last_train_loss = history.history['loss'][-1]
@@ -109,10 +148,13 @@ def train(console_text_widget, upload_sketch_button):
         # Convert the model to C++
         porter = tf_porter(model, X_train, y_train)
         cpp_code = porter.to_cpp(instance_name='model', arena_size=4096)
+        set_cpp_code(cpp_code)
         print(cpp_code)
 
-        upload_sketch_button.config(state='normal')
+        upload_sketch_button.configure(state='normal')
     except ValueError:
         messagebox.showerror("Error", "Input data shape is not compatible with model expected shape")
+
+
 
 

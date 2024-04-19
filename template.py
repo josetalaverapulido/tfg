@@ -11,8 +11,7 @@ def get_arduino_code():
 def set_arduino_code_template(ssid, password, mqtt_client_name, server, port, receive_topic, send_topic):
     global arduino_code
 
-    arduino_code = f'''
-#include <WiFi.h> // For connecting ESP32 to WiFi
+    arduino_code = f'''#include <WiFi.h> // For connecting ESP32 to WiFi
 #include <PubSubClient.h>
 #include "model.h"
 #include <ArduinoJson.h>
