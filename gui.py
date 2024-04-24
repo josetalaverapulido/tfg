@@ -270,7 +270,7 @@ class Page4(ctk.CTkFrame):
         self.train_model_button.grid(row=4, column=1, padx=30, pady=5, sticky="ew")
 
         # Button to upload the sketch
-        self.upload_sketch_button = ctk.CTkButton(self, text="Compile & Upload Sketch", command=lambda: create_sketch_async(self.console_text))
+        self.upload_sketch_button = ctk.CTkButton(self, text="Compile & Upload Sketch", command=lambda: create_sketch_async(self.console_text, self.progress_bar, self.progress_bar_label))
         self.upload_sketch_button.grid(row=4, column=2, padx=30, pady=5, sticky="ew")  
 
         # Disable train model button until model is trained

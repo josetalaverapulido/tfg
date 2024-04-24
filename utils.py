@@ -30,7 +30,10 @@ def create_numeric_entry(parent, data_type, data_length=None):
     entry = ctk.CTkEntry(parent, validate="key", validatecommand=(vcmd, '%P'))
     return entry
 
-
+def update_progress(progress_bar, progress_label, value, message):
+    progress_bar['value'] = value  # Ajusta el valor de la barra de progreso
+    progress_label.configure(text=message)  # Cambia el texto del label
+    progress_bar.update_idletasks()  # Actualiza la barra de progreso en la GUI
 
 def get_port_list():
     result = subprocess.run('arduino-cli board list', capture_output=True, text=True, shell=True)
@@ -59,63 +62,86 @@ def raise_frame(frame_list, target_frame):
 
 
 
-def create_sketch_async(console_text):    
+def create_sketch_async(console_text,progress_bar, progress_bar_label):    
     # Create a thread to execute create_sketch()
-    train_thread = threading.Thread(target=create_sketch, args=(console_text,))
+    train_thread = threading.Thread(target=create_sketch, args=(console_text,progress_bar, progress_bar_label))
     train_thread.start()
 
 
+def upload_sketch_async(command, cwd, console_text, progress_bar, progress_bar_label):
+    def run_command():
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cwd, universal_newlines=True, bufsize=1)
 
+        # Read command output line by line
+        with process.stdout:
+            for line in iter(process.stdout.readline, ''):
+                console_text.insert('end', line)
+                console_text.see('end')  # Automatically move the scrollbar to the end
+                if "Done" in line:
+                    update_progress(progress_bar, progress_bar_label, 100, "Upload completed")
 
-def create_sketch(console_text):    
-    console_text.delete("1.0",'end-1c')
-
-    #----------------- Create Sketch --------------
-    file_name = get_file_name()
+        # Ensure the process is closed properly
+        process.stdout.close()
+        process.wait()
     
+    # Start the thread to handle real-time output
+    thread = threading.Thread(target=run_command)
+    thread.start()
+
+
+
+
+
+
+def create_sketch(console_text, progress_bar, progress_bar_label):    
+    console_text.delete("1.0", 'end-1c')
+    progress_bar['value'] = 0
+
+    # Inicializa la barra de progreso
+    update_progress(progress_bar, progress_bar_label, 0, "Creating sketch...")
+
+    # Create Sketch
+    file_name = get_file_name()
     create_sketch_command = f"arduino-cli sketch new {file_name}"
     try:
         process = subprocess.Popen(create_sketch_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=MODELS_DIRECTORY)
-        console_text.insert('end', "Sketch created succesfully\n")
+        stdout, stderr = process.communicate()
+        update_progress(progress_bar, progress_bar_label, 20, "Creating .ino file...")
     except Exception as e:
         console_text.insert('end', str(e) + "\n")
 
-    #----------------- Create .ino file --------------
+    # Create .ino file
     arduino_code = get_arduino_code()
-
     try:
-        with open(MODELS_DIRECTORY + f"\{file_name}\{file_name}.ino", "w") as archivo:
+        with open(MODELS_DIRECTORY + f"\\{file_name}\\{file_name}.ino", "w") as archivo:
             archivo.write(arduino_code)
-        print("archivo .ino creado correctamente \n")
+        update_progress(progress_bar, progress_bar_label, 40, "Creating header file...")
     except Exception as e:
         console_text.insert('end', str(e) + "\n")
 
-    #----------------- Create modelo.h file --------------
+    # Create model.h file
     cpp_code = get_cpp_code()
-
     try:
-        with open(MODELS_DIRECTORY + f"\{file_name}\model.h", "w") as archivo:
+        with open(MODELS_DIRECTORY + f"\\{file_name}\\model.h", "w") as archivo:
             archivo.write(cpp_code)
-        print("archivo .h creado correctamente\n")
+        update_progress(progress_bar, progress_bar_label, 60, "Compiling sketch")
     except Exception as e:
         console_text.insert('end', str(e) + "\n")
- 
-    #----------------- Compile Sketch --------------
-    console_text.insert('end',"IMPORTANT: HOLD DOWN BOOT MODE BUTTON IN DEVICE\n")
 
+    # Compile Sketch
+    console_text.insert('end', "REMEMBER: HOLD DOWN BOOT MODE BUTTON IN DEVICE WHEN UPLOADING\n")
     file_directory = get_file_directory()
     compile_command = f"arduino-cli compile --fqbn {FQBN_ESP32} {file_name}.ino"
-
     try:
         process = subprocess.Popen(compile_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=file_directory)
         stdout, stderr = process.communicate()
         output = stdout.decode("utf-8") + stderr.decode("utf-8")
         console_text.insert('end', output)
+        update_progress(progress_bar, progress_bar_label, 80, "Uploading sketch...")
     except Exception as e:
         console_text.insert('end', str(e) + "\n")
 
-
-    #----------------- Upload Sketch --------------
+    # Upload Sketch
     device_port = get_device_port()
     port, protocol = device_port.split("-")
     password = get_password()
@@ -123,18 +149,14 @@ def create_sketch(console_text):
     if "NETWORK" in protocol.upper():
         ip_esp32 = get_ip_esp32()
         upload_command = f"arduino-cli upload -p {ip_esp32} --fqbn {FQBN_ESP32} --upload-field password={password} {file_name}.ino"
-
-    elif "SERIAL"in protocol.upper():
+    elif "SERIAL" in protocol.upper():
         upload_command = f"arduino-cli upload -p {port} --fqbn {FQBN_ESP32} {file_name}.ino"
-    
-    try:
-        process = subprocess.Popen(upload_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=file_directory)
-        stdout, stderr = process.communicate()
-        output = stdout.decode("latin1") + stderr.decode("latin1")
-        console_text.delete('end-2l', 'end') 
-        console_text.insert('end',"\n\n" + output)
-    except Exception as e:
-        console_text.insert('end', str(e) + "\n")
+
+    upload_sketch_async(upload_command, file_directory, console_text, progress_bar, progress_bar_label)
+
+
+
+
 
 
 def setters_values_page1(model_str,batch_size,epochs,adam_learning_rate):
