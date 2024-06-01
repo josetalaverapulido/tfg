@@ -66,7 +66,7 @@ def create_sketch_async(console_text,progress_bar, progress_bar_label):
     # Create a thread to execute create_sketch()
     train_thread = threading.Thread(target=create_sketch, args=(console_text,progress_bar, progress_bar_label))
     train_thread.start()
-
+    
 
 def upload_sketch_async(command, cwd, console_text, progress_bar, progress_bar_label):
     def run_command():

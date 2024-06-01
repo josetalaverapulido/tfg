@@ -94,6 +94,7 @@ def train_async(console_text_widget, upload_sketch_button, progress_bar, progres
     train_thread.start()
 
 
+
 def train(console_text_widget, upload_sketch_button, progress_bar, progress_bar_label):
     global cpp_code
 
