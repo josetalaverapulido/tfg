@@ -9,7 +9,7 @@ import threading
 import customtkinter as ctk
 from tkinter import messagebox
 import ipaddress
-
+import os
 
 def validate_input(new_value, data_type, data_length=None):
     if new_value == "":
@@ -94,6 +94,20 @@ def upload_sketch_async(command, cwd, console_text, progress_bar, progress_bar_l
 
 
 def create_sketch(console_text, progress_bar, progress_bar_label):    
+
+    # Obtener el directorio actual de trabajo
+    directorio_proyecto = os.getcwd()
+
+    # Nombre de la nueva carpeta
+    nombre_carpeta = "models2"
+
+    # Ruta completa de la nueva carpeta
+    models_directory2 = os.path.join(directorio_proyecto, nombre_carpeta)
+
+    # Crear la nueva carpeta
+    os.makedirs(models_directory2, exist_ok=True)
+
+
     console_text.delete("1.0", 'end-1c')
     progress_bar['value'] = 0
 
@@ -104,7 +118,7 @@ def create_sketch(console_text, progress_bar, progress_bar_label):
     file_name = get_file_name()
     create_sketch_command = f"arduino-cli sketch new {file_name}"
     try:
-        process = subprocess.Popen(create_sketch_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=MODELS_DIRECTORY)
+        process = subprocess.Popen(create_sketch_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=models_directory2)
         stdout, stderr = process.communicate()
         update_progress(progress_bar, progress_bar_label, 20, "Creating .ino file...")
     except Exception as e:
@@ -113,7 +127,7 @@ def create_sketch(console_text, progress_bar, progress_bar_label):
     # Create .ino file
     arduino_code = get_arduino_code()
     try:
-        with open(MODELS_DIRECTORY + f"\\{file_name}\\{file_name}.ino", "w") as archivo:
+        with open(models_directory2 + f"\\{file_name}\\{file_name}.ino", "w") as archivo:
             archivo.write(arduino_code)
         update_progress(progress_bar, progress_bar_label, 40, "Creating header file...")
     except Exception as e:
@@ -122,7 +136,7 @@ def create_sketch(console_text, progress_bar, progress_bar_label):
     # Create model.h file
     cpp_code = get_cpp_code()
     try:
-        with open(MODELS_DIRECTORY + f"\\{file_name}\\model.h", "w") as archivo:
+        with open(models_directory2 + f"\\{file_name}\\model.h", "w") as archivo:
             archivo.write(cpp_code)
         update_progress(progress_bar, progress_bar_label, 60, "Compiling sketch")
     except Exception as e:
@@ -130,10 +144,14 @@ def create_sketch(console_text, progress_bar, progress_bar_label):
 
     # Compile Sketch
     console_text.insert('end', "REMEMBER: HOLD DOWN BOOT MODE BUTTON IN DEVICE WHEN UPLOADING\n")
-    file_directory = get_file_directory()
+    #file_directory = get_file_directory()
+
+    # Ruta completa de la nueva carpeta
+    file_directory2 = os.path.join(models_directory2, file_name)
+
     compile_command = f"arduino-cli compile --fqbn {FQBN_ESP32} {file_name}.ino"
     try:
-        process = subprocess.Popen(compile_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=file_directory)
+        process = subprocess.Popen(compile_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=file_directory2)
         stdout, stderr = process.communicate()
         output = stdout.decode("utf-8") + stderr.decode("utf-8")
         console_text.insert('end', output)
@@ -152,7 +170,7 @@ def create_sketch(console_text, progress_bar, progress_bar_label):
     elif "SERIAL" in protocol.upper():
         upload_command = f"arduino-cli upload -p {port} --fqbn {FQBN_ESP32} {file_name}.ino"
 
-    upload_sketch_async(upload_command, file_directory, console_text, progress_bar, progress_bar_label)
+    upload_sketch_async(upload_command, file_directory2, console_text, progress_bar, progress_bar_label)
 
 
 

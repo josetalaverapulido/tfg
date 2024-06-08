@@ -98,30 +98,38 @@ def train_async(console_text_widget, upload_sketch_button, progress_bar, progres
 def train(console_text_widget, upload_sketch_button, progress_bar, progress_bar_label):
     global cpp_code
 
-    # Modificar
-    user_adam_learning_rate = float(get_adam_learning_rate())
-    user_batch_size = int(get_batch_size())
-    user_epochs = int(get_epochs())
+    try:
+        # Modificar
+        user_adam_learning_rate = float(get_adam_learning_rate())
+        user_batch_size = int(get_batch_size())
+        user_epochs = int(get_epochs())
 
 
-    progress_bar['value'] = 0
-    progress_bar.grid(row=3, column=1, padx=10, pady=10, sticky="ew")
-    progress_bar.update_idletasks()
+        progress_bar['value'] = 0
+        progress_bar.grid(row=3, column=1, padx=10, pady=10, sticky="ew")
+        progress_bar.update_idletasks()
 
-    progress_bar_label.configure(text="Training model...")
-    progress_bar_label.grid(row=3, column=2, padx=10, pady=10, sticky="w")  
-    progress_bar_label.update_idletasks()
+        progress_bar_label.configure(text="Training model...")
+        progress_bar_label.grid(row=3, column=2, padx=10, pady=10, sticky="w")  
+        progress_bar_label.update_idletasks()
+    except:
+        messagebox.showerror("Error", "error1")
 
-    # Compile the model
-    model.compile(optimizer=Adam(learning_rate=user_adam_learning_rate), loss=MeanSquaredError(), metrics=['mean_absolute_error'])
-    
-    # Obtain data in this thread
-    training_data_file_path = get_training_data_file_path()
-    validation_data_file_path = get_validation_data_file_path()
+    try:
+        # Compile the model
+        model.compile(optimizer=Adam(learning_rate=user_adam_learning_rate), loss=MeanSquaredError(), metrics=['mean_absolute_error'])
+    except:
+        messagebox.showerror("Error", "error2")
 
-    X_train, y_train = get_data(training_data_file_path)
-    X_val, y_val = get_data(validation_data_file_path)
+    try:
+        # Obtain data in this thread
+        training_data_file_path = get_training_data_file_path()
+        validation_data_file_path = get_validation_data_file_path()
 
+        X_train, y_train = get_data(training_data_file_path)
+        X_val, y_val = get_data(validation_data_file_path)
+    except:
+        messagebox.showerror("Error", "error3")
     try:
         console_text_widget.insert('end', "\nTraining model...")
         console_text_widget.update()  
